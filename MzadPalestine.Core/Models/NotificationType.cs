@@ -1,0 +1,19 @@
+public enum NotificationType
+{
+    NewBid,
+    WonAuction,
+    NewComment,
+    ListingEnded,
+    ListingApproved,
+    ListingRejected,
+    BidAccepted,
+    NewFollower,
+    AuctionEnded,
+    PaymentRequired,
+    PaymentReceived,
+    Message,
+    ListingReported,
+    BidPlaced,
+    BidOutbid,
+    AuctionEndingSoon
+} 

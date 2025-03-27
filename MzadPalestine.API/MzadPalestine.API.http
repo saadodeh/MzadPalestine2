@@ -1,0 +1,6 @@
+@MzadPalestine.API_HostAddress = http://localhost:5202
+
+GET {{MzadPalestine.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
