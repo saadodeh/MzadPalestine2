@@ -60,13 +60,18 @@ public class UserConnectionManager : IUserConnectionManager
         throw new NotImplementedException();
     }
 
-    List<string> IUserConnectionManager.GetConnections(string userId)
+    public void KeepUserConnection(string userId, string connectionId)
     {
-        throw new NotImplementedException();
+        AddConnection(userId, connectionId);
     }
 
-    public void RemoveConnection(string connectionId, string userId)
+    public void RemoveUserConnection(string connectionId)
     {
-        throw new NotImplementedException();
+        RemoveConnection(connectionId);
+    }
+
+    public List<string> GetUserConnections(string userId)
+    {
+        return GetConnections(userId).ToList();
     }
 }

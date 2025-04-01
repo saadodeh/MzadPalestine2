@@ -2,8 +2,10 @@ namespace MzadPalestine.Core.Models.Enums;
 public enum PaymentStatus
 {
     Pending,
-    Completed,
+    Paid,
+    Refunded,
     Failed,
-    Canceled
+    Canceled,
+    Completed
 }
 

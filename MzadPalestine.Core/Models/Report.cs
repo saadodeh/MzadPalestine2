@@ -6,7 +6,9 @@ namespace MzadPalestine.Core.Models;
 public class Report : BaseEntity
 {
     public int Id { get; set; }
+    public string Title { get; set; }
     public string ReporterId { get; set; }
+    public string ReportedUserId { get; set; }
     public string ResolvedById { get; set; }
     public string Description { get; set; }
     public DateTime CreatedAt { get; set; }

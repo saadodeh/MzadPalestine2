@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using MzadPalestine.Core.Models;
 using MzadPalestine.Core.Interfaces.Common;
+using MzadPalestine.Core.Models.Common;
 using System.Reflection;
 using System.Linq.Expressions;
 
@@ -21,6 +22,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Review> Reviews { get; set; } = null!;
     public DbSet<Message> Messages { get; set; } = null!;
     public DbSet<Report> Reports { get; set; } = null!;
+    public DbSet<ReportComment> ReportComments { get; set; } = null!;
     public DbSet<Payment> Payments { get; set; } = null!;
     public DbSet<UserProfile> UserProfiles { get; set; } = null!;
     public DbSet<ListingImage> ListingImages { get; set; } = null!;
@@ -40,7 +42,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
-        
+
         // Apply all configurations from the current assembly
         builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
 
@@ -118,7 +120,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .IsUnique();
 
         builder.Entity<Watchlist>()
-            .HasIndex(w => new { w.UserId, w.ListingId })
+            .HasIndex(w => new { w.UserId , w.ListingId })
             .IsUnique();
 
         // Configure soft delete filter
@@ -127,12 +129,12 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             if (typeof(ISoftDelete).IsAssignableFrom(entityType.ClrType))
             {
                 entityType.GetProperty("IsDeleted")?.SetDefaultValue(false);
-                var parameter = Expression.Parameter(entityType.ClrType, "e");
+                var parameter = Expression.Parameter(entityType.ClrType , "e");
                 var body = Expression.Equal(
-                    Expression.Property(parameter, "IsDeleted"),
+                    Expression.Property(parameter , "IsDeleted") ,
                     Expression.Constant(false)
                 );
-                var lambda = Expression.Lambda(body, parameter);
+                var lambda = Expression.Lambda(body , parameter);
                 builder.Entity(entityType.ClrType).HasQueryFilter(lambda);
             }
         }
@@ -144,7 +146,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         return base.SaveChangesAsync(cancellationToken);
     }
 
-    private void UpdateAuditableEntities()
+    private void UpdateAuditableEntities( )
     {
         var entries = ChangeTracker.Entries<IAuditable>();
 
@@ -158,13 +160,13 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
             if (entry.State == EntityState.Modified)
             {
-                entry.Entity.LastModifiedAt = DateTime.UtcNow;
-                entry.Entity.LastModifiedBy = GetCurrentUserId();
+                entry.Entity.UpdatedAt = DateTime.UtcNow;
+                entry.Entity.UpdatedBy = GetCurrentUserId();
             }
         }
     }
 
-    private string? GetCurrentUserId()
+    private string? GetCurrentUserId( )
     {
         // This should be implemented to get the current user ID from the ICurrentUserService
         // For now, return null or implement your logic

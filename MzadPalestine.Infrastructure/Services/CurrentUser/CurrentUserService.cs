@@ -40,4 +40,34 @@ public class CurrentUserService : ICurrentUserService
     public string? IpAddress => _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
 
     public string? UserAgent => _httpContextAccessor.HttpContext?.Request?.Headers["User-Agent"].ToString();
+
+    public ClaimsPrincipal? User => _httpContextAccessor.HttpContext?.User;
+
+    public bool IsInRole(string role)
+    {
+        return _httpContextAccessor.HttpContext?.User?.IsInRole(role) ?? false;
+    }
+
+    public IEnumerable<string> GetUserRoles()
+    {
+        return _httpContextAccessor.HttpContext?.User?.Claims
+            .Where(c => c.Type == ClaimTypes.Role)
+            .Select(c => c.Value)
+            .ToList() ?? new List<string>();
+    }
+
+    public IEnumerable<Claim> GetUserClaims()
+    {
+        return _httpContextAccessor.HttpContext?.User?.Claims ?? new List<Claim>();
+    }
+
+    public string GetUserId()
+    {
+        var userId = UserId;
+        if (string.IsNullOrEmpty(userId))
+        {
+            throw new UnauthorizedAccessException("User is not authenticated");
+        }
+        return userId;
+    }
 }

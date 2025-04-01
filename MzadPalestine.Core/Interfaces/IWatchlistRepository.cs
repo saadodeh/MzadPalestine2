@@ -5,13 +5,8 @@ namespace MzadPalestine.Core.Interfaces;
 
 public interface IWatchlistRepository : IGenericRepository<Watchlist>
 {
-    Task<PagedList<Auction>> GetUserWatchlistAsync(string userId, PaginationParams parameters);
-    Task<bool> IsInWatchlistAsync(string userId, int auctionId);
-    Task AddToWatchlistAsync(string userId, int auctionId);
-    Task RemoveFromWatchlistAsync(string userId, int auctionId);
-    Task<int> GetWatchlistCountAsync(string userId);
-    Task<IEnumerable<string>> GetWatchingUsersAsync(int auctionId);
-    Task RemoveExpiredWatchlistItemsAsync();
-    Task<bool> HasReachedWatchlistLimitAsync(string userId);
-    Task<Dictionary<int, int>> GetWatchlistStatisticsAsync(string userId);
+    Task<PagedList<Watchlist>> GetUserWatchlistAsync(string userId, PaginationParams parameters);
+    Task<bool> IsListingInWatchlistAsync(string userId, int listingId);
+    Task<bool> ToggleWatchlistAsync(string userId, int listingId);
+    Task<int> GetWatchlistCountForListingAsync(int listingId);
 }

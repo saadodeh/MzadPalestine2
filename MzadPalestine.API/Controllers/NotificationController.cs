@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using MzadPalestine.Core.DTOs.Notifications;
 using MzadPalestine.Core.Interfaces.Services;
 using MzadPalestine.Core.Models.Common;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MzadPalestine.API.Controllers;
 
@@ -61,13 +62,5 @@ public class NotificationController : ControllerBase
         var userId = _currentUserService.GetUserId();
         var count = await _notificationService.GetUnreadNotificationCountAsync(userId);
         return Ok(new { count });
-    }
-
-    [HttpPut("mark-all-read")]
-    public async Task<IActionResult> MarkAllNotificationsAsRead()
-    {
-        var userId = _currentUserService.GetUserId();
-        await _notificationService.MarkAllNotificationsAsReadAsync(userId);
-        return Ok(new { message = "All notifications marked as read" });
     }
 }

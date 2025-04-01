@@ -13,7 +13,7 @@ public class ProductController : ControllerBase
     private readonly IListingService _listingService;
     private readonly ICurrentUserService _currentUserService;
 
-    public ProductController(IListingService listingService, ICurrentUserService currentUserService)
+    public ProductController(IListingService listingService , ICurrentUserService currentUserService)
     {
         _listingService = listingService;
         _currentUserService = currentUserService;
@@ -24,25 +24,25 @@ public class ProductController : ControllerBase
     public async Task<IActionResult> CreateProduct([FromBody] CreateListingDto createListingDto)
     {
         var userId = _currentUserService.GetUserId();
-        var result = await _listingService.CreateListingAsync(userId, createListingDto);
-        
-        if (!result.Succeeded)
-            return BadRequest(result.Message);
+        var result = await _listingService.CreateListingAsync(createListingDto , userId);
 
-        return CreatedAtAction(nameof(GetProduct), new { productId = result.Data.Id }, result.Data);
+        if (result == null)
+            return BadRequest("Failed to create listing");
+
+        return CreatedAtAction(nameof(GetProduct) , new { productId = result.Id } , result);
     }
 
     [Authorize]
     [HttpPut("update/{productId}")]
-    public async Task<IActionResult> UpdateProduct(int productId, [FromBody] UpdateListingDto updateListingDto)
+    public async Task<IActionResult> UpdateProduct(int productId , [FromBody] UpdateListingDto updateListingDto)
     {
         var userId = _currentUserService.GetUserId();
-        var result = await _listingService.UpdateListingAsync(userId, productId, updateListingDto);
-        
-        if (!result.Succeeded)
-            return BadRequest(result.Message);
+        var result = await _listingService.UpdateListingAsync(productId , updateListingDto , userId);
 
-        return Ok(result.Data);
+        if (!result)
+            return BadRequest("Failed to update listing");
+
+        return Ok("Listing updated successfully");
     }
 
     [Authorize]
@@ -50,18 +50,18 @@ public class ProductController : ControllerBase
     public async Task<IActionResult> DeleteProduct(int productId)
     {
         var userId = _currentUserService.GetUserId();
-        var result = await _listingService.DeleteListingAsync(userId, productId);
-        
-        if (!result.Succeeded)
-            return BadRequest(result.Message);
+        var result = await _listingService.DeleteListingAsync(productId , userId);
 
-        return Ok(new { message = "Product deleted successfully" });
+        if (!result)
+            return BadRequest("Failed to delete listing");
+
+        return Ok("Listing deleted successfully");
     }
 
     [HttpGet("all")]
     public async Task<IActionResult> GetAllProducts([FromQuery] PaginationParams parameters)
     {
-        var result = await _listingService.GetAllListingsAsync(parameters);
+        var result = await _listingService.GetListingsAsync(page: parameters.PageNumber , pageSize: parameters.PageSize);
         return Ok(result);
     }
 
@@ -69,17 +69,17 @@ public class ProductController : ControllerBase
     public async Task<IActionResult> GetProduct(int productId)
     {
         var result = await _listingService.GetListingByIdAsync(productId);
-        
-        if (!result.Succeeded)
-            return NotFound(result.Message);
 
-        return Ok(result.Data);
+        if (result == null)
+            return NotFound("Listing not found");
+
+        return Ok(result);
     }
 
     [HttpGet("search")]
-    public async Task<IActionResult> SearchProducts([FromQuery] string searchTerm, [FromQuery] PaginationParams parameters)
+    public async Task<IActionResult> SearchProducts([FromQuery] string searchTerm , [FromQuery] PaginationParams parameters)
     {
-        var result = await _listingService.SearchListingsAsync(searchTerm, parameters);
+        var result = await _listingService.GetListingsAsync(searchTerm: searchTerm , page: parameters.PageNumber , pageSize: parameters.PageSize);
         return Ok(result);
     }
 }

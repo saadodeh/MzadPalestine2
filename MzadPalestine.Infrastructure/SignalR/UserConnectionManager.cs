@@ -3,11 +3,11 @@ using MzadPalestine.Core.Interfaces.SignalR;
 
 namespace MzadPalestine.Infrastructure.SignalR;
 
-public class UserConnectionManager : IUserConnectionManager
+public class UserConnectionManager : ISignalRConnectionManager
 {
     private readonly ConcurrentDictionary<string, List<string>> _userConnectionMap = new();
 
-    public void KeepUserConnection(string userId, string connectionId)
+    public void AddConnection(string userId, string connectionId)
     {
         if (!_userConnectionMap.ContainsKey(userId))
         {
@@ -17,21 +17,14 @@ public class UserConnectionManager : IUserConnectionManager
         _userConnectionMap[userId].Add(connectionId);
     }
 
-    public void RemoveUserConnection(string connectionId)
+    public void RemoveConnection(string userId, string connectionId)
     {
-        foreach (var userId in _userConnectionMap.Keys)
+        if (_userConnectionMap.TryGetValue(userId, out var connections))
         {
-            if (_userConnectionMap.TryGetValue(userId, out var connections))
+            connections.Remove(connectionId);
+            if (connections.Count == 0)
             {
-                if (connections.Contains(connectionId))
-                {
-                    connections.Remove(connectionId);
-                    if (connections.Count == 0)
-                    {
-                        _userConnectionMap.TryRemove(userId, out _);
-                    }
-                    break;
-                }
+                _userConnectionMap.TryRemove(userId, out _);
             }
         }
     }
@@ -46,24 +39,9 @@ public class UserConnectionManager : IUserConnectionManager
         throw new NotImplementedException();
     }
 
-    public void AddConnection(string userId, string connectionId)
-    {
-        throw new NotImplementedException();
-    }
-
-    public void RemoveConnection(string connectionId)
-    {
-        throw new NotImplementedException();
-    }
-
     public List<string> GetConnections(string userId)
     {
-        throw new NotImplementedException();
-    }
-
-    public void RemoveConnection(string connectionId, string userId)
-    {
-        throw new NotImplementedException();
+        return GetUserConnections(userId);
     }
 
     public IEnumerable<string> OnlineUsers => _userConnectionMap.Keys;

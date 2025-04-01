@@ -1,14 +1,16 @@
+using MzadPalestine.Core.DTOs.Locations;
 using MzadPalestine.Core.Models;
-using MzadPalestine.Core.Models.Common;
 
 namespace MzadPalestine.Core.Interfaces;
 
-public interface ILocationRepository : IGenericRepository<Location>
+public interface ILocationRepository : IRepository<Location>
 {
-    Task<Location?> GetLocationWithChildrenAsync(int locationId);
-    Task<IEnumerable<Location>> GetRootLocationsAsync();
-    Task<IEnumerable<Location>> GetLocationsByParentIdAsync(int parentId);
-    Task<bool> HasListingsAsync(int locationId);
-    Task<bool> IsValidLocationPathAsync(int[] locationPath);
-    Task<Dictionary<string, int>> GetLocationStatisticsAsync();
+    Task<LocationDto?> GetLocationByIdAsync(int id);
+    Task<List<LocationDto>> GetAllLocationsAsync();
+    Task<List<LocationDto>> GetLocationsByParentIdAsync(int? parentId);
+    Task<LocationDetailsDto?> GetLocationDetailsAsync(int id);
+    Task<LocationTreeDto?> GetLocationTreeAsync(int id);
+    Task<int> GetListingCountAsync(int locationId);
+    Task<bool> LocationExistsAsync(int id);
+    Task<Location?> GetLocationWithChildrenAsync(int id);
 }

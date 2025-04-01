@@ -2,15 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace MzadPalestine.Core.DTOs.Wallet;
 
-public class WithdrawRequest
+public partial class WithdrawRequest
 {
-    [Required]
-    [Range(1, double.MaxValue)]
-    public decimal Amount { get; set; }
-
-    [Required]
-    public string PaymentMethod { get; set; } = string.Empty;
-
-    [Required]
-    public string PaymentDetails { get; set; } = string.Empty;
+    // This is a partial class definition that complements the main WithdrawRequest class in WalletRequestDtos.cs
 }

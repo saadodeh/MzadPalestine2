@@ -6,7 +6,7 @@ using MzadPalestine.Infrastructure.Data;
 
 namespace MzadPalestine.Infrastructure.Repositories;
 
-public class SubscriptionRepository : GenericRepository<Subscription>, ISubscriptionRepository
+public class SubscriptionRepository : GenericRepository<Subscription>, Core.Interfaces.ISubscriptionRepository
 {
     private readonly ApplicationDbContext _context;
 
@@ -15,7 +15,7 @@ public class SubscriptionRepository : GenericRepository<Subscription>, ISubscrip
         _context = context;
     }
 
-    public async Task<IEnumerable<Subscription>> GetActiveSubscriptionsAsync()
+    public async Task<IEnumerable<Subscription>> GetActiveSubscriptionsAsync( )
     {
         return await _context.Subscriptions
             .Include(s => s.User)
@@ -45,26 +45,26 @@ public class SubscriptionRepository : GenericRepository<Subscription>, ISubscrip
     public async Task<Subscription?> GetUserActiveSubscriptionAsync(string userId)
     {
         return await _context.Subscriptions
-            .FirstOrDefaultAsync(s => 
-                s.UserId == userId && 
+            .FirstOrDefaultAsync(s =>
+                s.UserId == userId &&
                 s.Status == SubscriptionStatus.Active &&
                 s.EndDate > DateTime.UtcNow);
     }
 
-    public async Task<PagedList<Subscription>> GetUserSubscriptionHistoryAsync(string userId, PaginationParams parameters)
+    public async Task<PagedList<Subscription>> GetUserSubscriptionHistoryAsync(string userId , PaginationParams parameters)
     {
         var query = _context.Subscriptions
             .Where(s => s.UserId == userId)
             .OrderByDescending(s => s.StartDate);
 
-        return await PagedList<Subscription>.CreateAsync(query, parameters.PageNumber, parameters.PageSize);
+        return await PagedList<Subscription>.CreateAsync(query , parameters.PageNumber , parameters.PageSize);
     }
 
     public async Task<IEnumerable<Subscription>> GetExpiringSubscriptionsAsync(int daysThreshold)
     {
         var thresholdDate = DateTime.UtcNow.AddDays(daysThreshold);
         return await _context.Subscriptions
-            .Where(s => 
+            .Where(s =>
                 s.Status == SubscriptionStatus.Active &&
                 s.EndDate <= thresholdDate &&
                 s.EndDate > DateTime.UtcNow)
@@ -75,8 +75,8 @@ public class SubscriptionRepository : GenericRepository<Subscription>, ISubscrip
     public async Task<bool> HasActiveSubscriptionAsync(string userId)
     {
         return await _context.Subscriptions
-            .AnyAsync(s => 
-                s.UserId == userId && 
+            .AnyAsync(s =>
+                s.UserId == userId &&
                 s.Status == SubscriptionStatus.Active &&
                 s.EndDate > DateTime.UtcNow);
     }

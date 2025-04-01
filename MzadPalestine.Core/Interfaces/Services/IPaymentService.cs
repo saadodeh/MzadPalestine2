@@ -1,12 +1,13 @@
-using MzadPalestine.Core.Models;
+using MzadPalestine.Core.DTOs.Payments;
+using MzadPalestine.Core.DTOs.Transactions;
+using MzadPalestine.Core.Models.Common;
 
 namespace MzadPalestine.Core.Interfaces.Services;
 
 public interface IPaymentService
 {
-    Task<string> InitiatePaymentAsync(int amount, string currency);
-    Task<bool> ProcessPaymentAsync(string paymentMethodId, string currency);
-    Task<bool> RefundPaymentAsync(string transactionId);
-    Task<bool> VerifyPaymentAsync(string transactionId);
-    Task ProcessPendingPaymentsAsync();
+    Task<Result<PaymentResultDto>> ProcessPaymentAsync(string userId, TransactionPaymentDto paymentDto);
+    Task<Result<RefundResultDto>> RefundPaymentAsync(string userId, string transactionId);
+    Task<Result<TransactionDto>> GetTransactionByIdAsync(string transactionId);
+    Task<PagedList<TransactionDto>> GetUserTransactionsAsync(string userId, PaginationParams parameters);
 }

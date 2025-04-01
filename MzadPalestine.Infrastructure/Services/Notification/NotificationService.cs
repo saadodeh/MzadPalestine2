@@ -1,149 +1,152 @@
-using Microsoft.Extensions.Logging;
-using MzadPalestine.Core.Interfaces.Repositories;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
+using MzadPalestine.Core.DTOs.Notifications;
 using MzadPalestine.Core.Interfaces.Services;
 using MzadPalestine.Core.Models;
-//using NotificationType = MzadPalestine.Core.Models.NotificationType;
+using MzadPalestine.Core.Models.Common;
+using MzadPalestine.Infrastructure.Data;
+using MzadPalestine.Infrastructure.SignalR;
 
 namespace MzadPalestine.Infrastructure.Services.Notification;
 
 public class NotificationService : INotificationService
 {
-    private readonly INotificationRepository _notificationRepository;
-    private readonly ILogger<NotificationService> _logger;
+    private readonly ApplicationDbContext _context;
+    private readonly IHubContext<NotificationHub> _hubContext;
     private readonly IUserConnectionManager _userConnectionManager;
 
     public NotificationService(
-        INotificationRepository notificationRepository,
-        ILogger<NotificationService> logger,
+        ApplicationDbContext context ,
+        IHubContext<NotificationHub> hubContext ,
         IUserConnectionManager userConnectionManager)
     {
-        _notificationRepository = notificationRepository;
-        _logger = logger;
+        _context = context;
+        _hubContext = hubContext;
         _userConnectionManager = userConnectionManager;
     }
 
-    public async Task NotifyAuctionEndedAsync(int auctionId, string? winnerId)
+    public async Task<Result<bool>> SendNotificationAsync(SendNotificationDto notificationDto)
     {
-        var notification = new MzadPalestine.Core.Models.Notification
+        try
         {
-            Title = "المزاد انتهى",
-            Message = winnerId != null 
-                ? "تم إنهاء المزاد بنجاح" 
-                : "انتهى المزاد بدون عروض",
-            UserId = winnerId ?? string.Empty,
-            Type = (MzadPalestine.Core.Models.NotificationType)NotificationType.AuctionEnded,
-            ReferenceId = auctionId.ToString()
-        };
+            var notification = new Core.Models.Notification
+            {
+                Title = notificationDto.Title ,
+                Message = notificationDto.Message ,
+                UserId = notificationDto.UserId ,
+                Type = (Core.Models.NotificationType)notificationDto.Type ,
+                ReferenceId = notificationDto.ReferenceId ,
+                CreatedAt = DateTime.UtcNow ,
+                IsRead = false ,
+                Status = NotificationStatus.Unread.ToString()
+            };
 
-        await _notificationRepository.CreateAsync(notification);
-        if (winnerId != null)
+            await _context.Notifications.AddAsync(notification);
+            await _context.SaveChangesAsync();
+
+            // إرسال الإشعار في الوقت الفعلي
+            var connections = _userConnectionManager.GetUserConnections(notificationDto.UserId);
+            if (connections != null && connections.Any())
+            {
+                await _hubContext.Clients.Clients(connections)
+                    .SendAsync("ReceiveNotification" , notification);
+            }
+
+            return Result<bool>.CreateSuccess(true);
+        }
+        catch (Exception ex)
         {
-            await _userConnectionManager.SendToUserAsync(winnerId, notification, notification.Type.ToString());
+            return Result<bool>.Failure($"فشل في إرسال الإشعار: {ex.Message}");
         }
     }
 
-    public async Task NotifyPaymentRequiredAsync(int auctionId, string userId)
+    public async Task<Result<bool>> SendNotificationAsync(string userId , string title , string message , string? route = null)
     {
-        var notification = new MzadPalestine.Core.Models.Notification
+        var notificationDto = new SendNotificationDto
         {
-            Title = "مطلوب الدفع",
-            Message = "يرجى إكمال عملية الدفع للمزاد الذي فزت به",
-            UserId = userId,
-            Type = (MzadPalestine.Core.Models.NotificationType)NotificationType.PaymentRequired,
-            ReferenceId = auctionId.ToString()
+            UserId = userId ,
+            Title = title ,
+            Message = message ,
+            ReferenceId = route ,
+            Type = NotificationType.General
         };
 
-        await _notificationRepository.CreateAsync(notification);
-        await _userConnectionManager.SendToUserAsync(userId, notification, notification.Type.ToString());
+        return await SendNotificationAsync(notificationDto);
     }
 
-    public async Task NotifyPaymentReceivedAsync(int auctionId, string userId)
+    public async Task<PagedResult<NotificationDto>> GetUserNotificationsAsync(string userId , PaginationParams parameters)
     {
-        var notification = new MzadPalestine.Core.Models.Notification
-        {
-            Title = "تم استلام الدفع",
-            Message = "تم استلام الدفع بنجاح للمزاد",
-            UserId = userId,
-            Type = (MzadPalestine.Core.Models.NotificationType)NotificationType.PaymentReceived,
-            ReferenceId = auctionId.ToString()
-        };
+        var query = _context.Notifications
+            .Where(n => n.UserId == userId)
+            .OrderByDescending(n => n.CreatedAt);
 
-        await _notificationRepository.CreateAsync(notification);
-        await _userConnectionManager.SendToUserAsync(userId, notification, notification.Type.ToString());
+        var totalCount = await query.CountAsync();
+        var notifications = await query
+            .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+            .Take(parameters.PageSize)
+            .Select(n => new NotificationDto
+            {
+                Id = n.Id ,
+                Title = n.Title ,
+                Message = n.Message ,
+                Type = (NotificationType)n.Type ,
+                CreatedAt = n.CreatedAt ,
+                IsRead = n.IsRead ,
+                ReferenceId = n.ReferenceId
+            })
+            .ToListAsync();
+
+        return new PagedResult<NotificationDto>
+        {
+            Items = notifications ,
+            TotalCount = totalCount ,
+            PageNumber = parameters.PageNumber ,
+            PageSize = parameters.PageSize
+        };
     }
 
-    public async Task NotifyMessageReceivedAsync(string userId, string senderId, string message)
+    public async Task<Result<bool>> MarkNotificationAsReadAsync(string userId , int notificationId)
     {
-        var notification = new MzadPalestine.Core.Models.Notification
+        try
         {
-            Title = "رسالة جديدة",
-            Message = message,
-            UserId = userId,
-            Type = (MzadPalestine.Core.Models.NotificationType)NotificationType.Message,
-            ReferenceId = senderId
-        };
+            var notification = await _context.Notifications
+                .FirstOrDefaultAsync(n => n.Id == notificationId && n.UserId == userId);
 
-        await _notificationRepository.CreateAsync(notification);
-        await _userConnectionManager.SendToUserAsync(userId, notification, notification.Type.ToString());
+            if (notification == null)
+            {
+                return Result<bool>.Failure("الإشعار غير موجود");
+            }
+
+            notification.IsRead = true;
+            notification.Status = NotificationStatus.Read.ToString();
+            await _context.SaveChangesAsync();
+
+            return Result<bool>.CreateSuccess(true);
+        }
+        catch (Exception ex)
+        {
+            return Result<bool>.Failure($"فشل في تحديث حالة الإشعار: {ex.Message}");
+        }
     }
 
-    public async Task NotifyListingReportedAsync(int listingId, string userId, string reason)
+    public async Task<int> GetUnreadNotificationCountAsync(string userId)
     {
-        var notification = new MzadPalestine.Core.Models.Notification
-        {
-            Title = "تم الإبلاغ عن القائمة",
-            Message = $"تم الإبلاغ عن القائمة الخاصة بك. السبب: {reason}",
-            UserId = userId,
-            Type = (MzadPalestine.Core.Models.NotificationType)NotificationType.ListingReported,
-            ReferenceId = listingId.ToString()
-        };
-
-        await _notificationRepository.CreateAsync(notification);
-        await _userConnectionManager.SendToUserAsync(userId, notification, notification.Type.ToString());
+        return await _context.Notifications
+            .CountAsync(n => n.UserId == userId && !n.IsRead);
     }
 
-    public async Task NotifyBidPlacedAsync(int auctionId, string userId, decimal amount)
+    public async Task MarkAllNotificationsAsReadAsync(string userId)
     {
-        var notification = new MzadPalestine.Core.Models.Notification
+        var notifications = await _context.Notifications
+            .Where(n => n.UserId == userId && !n.IsRead)
+            .ToListAsync();
+
+        foreach (var notification in notifications)
         {
-            Title = "تم وضع مزايدة",
-            Message = $"تم وضع مزايدة جديدة بقيمة {amount:C}",
-            UserId = userId,
-            Type = (MzadPalestine.Core.Models.NotificationType)NotificationType.BidPlaced,
-            ReferenceId = auctionId.ToString()
-        };
+            notification.IsRead = true;
+            notification.Status = NotificationStatus.Read.ToString();
+        }
 
-        await _notificationRepository.CreateAsync(notification);
-        await _userConnectionManager.SendToUserAsync(userId, notification, notification.Type.ToString());
-    }
-
-    public async Task NotifyBidOutbidAsync(int auctionId, string userId, decimal newAmount)
-    {
-        var notification = new MzadPalestine.Core.Models.Notification
-        {
-            Title = "تم تجاوز مزايدتك",
-            Message = $"تم تجاوز مزايدتك. المزايدة الجديدة هي {newAmount:C}",
-            UserId = userId,
-            Type = (MzadPalestine.Core.Models.NotificationType)NotificationType.BidOutbid,
-            ReferenceId = auctionId.ToString()
-        };
-
-        await _notificationRepository.CreateAsync(notification);
-        await _userConnectionManager.SendToUserAsync(userId, notification, notification.Type.ToString());
-    }
-
-    public async Task NotifyAuctionEndingSoonAsync(int auctionId)
-    {
-        var notification = new MzadPalestine.Core.Models.Notification
-        {
-            Title = "المزاد ينتهي قريباً",
-            Message = "المزاد سينتهي خلال ساعة واحدة",
-            Type = (MzadPalestine.Core.Models.NotificationType)NotificationType.AuctionEndingSoon,
-            ReferenceId = auctionId.ToString()
-        };
-
-        // TODO: Get all bidders and notify them
-        // For now, we'll just create the notification without sending it
-        await _notificationRepository.CreateAsync(notification);
+        await _context.SaveChangesAsync();
     }
 }

@@ -10,6 +10,7 @@ public class Dispute : BaseEntity
     public DisputeStatus Status { get; set; }
     public DateTime CreatedAt { get; set; }
     public string? ResolvedById { get; set; }
+    public bool IsResolved { get; set; }
 
     // Navigation properties
     public virtual ApplicationUser User { get; set; } = null!;

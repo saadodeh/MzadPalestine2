@@ -4,7 +4,5 @@ namespace MzadPalestine.Core.Interfaces.Repositories;
 
 public interface ICustomerSupportTicketRepository : IGenericRepository<CustomerSupportTicket>
 {
-    Task<IEnumerable<CustomerSupportTicket>> GetUserTicketsAsync(string userId);
-    Task<IEnumerable<CustomerSupportTicket>> GetOpenTicketsAsync();
-    Task<IEnumerable<CustomerSupportTicket>> GetClosedTicketsAsync();
+    // Add any specific methods for customer support ticket operations here
 }

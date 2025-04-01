@@ -1,5 +1,6 @@
 public enum NotificationType
 {
+    General,
     NewBid,
     WonAuction,
     NewComment,
@@ -16,4 +17,4 @@ public enum NotificationType
     BidPlaced,
     BidOutbid,
     AuctionEndingSoon
-} 
+}

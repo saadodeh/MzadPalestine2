@@ -5,8 +5,8 @@ using MzadPalestine.Core.Interfaces.Services;
 
 namespace MzadPalestine.API.Controllers;
 
-[ApiController]
 [Route("api/[controller]")]
+[ApiController]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
@@ -22,8 +22,8 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Register([FromBody] RegisterDto registerDto)
     {
         var result = await _authService.RegisterAsync(registerDto);
-        if (!result.Succeeded)
-            return BadRequest(result.Errors);
+        if (!result.IsSuccess)
+            return BadRequest(result.Message);
 
         return Ok(new { message = "Registration successful. Please check your email for confirmation." });
     }
@@ -32,14 +32,14 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
     {
         var result = await _authService.LoginAsync(loginDto);
-        if (!result.Succeeded)
+        if (!result.IsSuccess)
             return Unauthorized(result.Message);
 
         return Ok(new
         {
             Token = result.Token,
             RefreshToken = result.RefreshToken,
-            ExpiresIn = result.ExpiresIn
+            ExpiresIn = result.TokenExpiration
         });
     }
 
@@ -55,14 +55,14 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDto refreshTokenDto)
     {
         var result = await _authService.RefreshTokenAsync(refreshTokenDto);
-        if (!result.Succeeded)
+        if (!result.IsSuccess)
             return BadRequest(result.Message);
 
         return Ok(new
         {
             Token = result.Token,
             RefreshToken = result.RefreshToken,
-            ExpiresIn = result.ExpiresIn
+            ExpiresIn = result.TokenExpiration
         });
     }
 
@@ -70,7 +70,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> ConfirmEmail([FromQuery] string userId, [FromQuery] string token)
     {
         var result = await _authService.ConfirmEmailAsync(userId, token);
-        if (!result.Succeeded)
+        if (!result.IsSuccess)
             return BadRequest(result.Message);
 
         return Ok(new { message = "Email confirmed successfully" });
@@ -80,7 +80,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto forgotPasswordDto)
     {
         var result = await _authService.ForgotPasswordAsync(forgotPasswordDto.Email);
-        if (!result.Succeeded)
+        if (!result.IsSuccess)
             return BadRequest(result.Message);
 
         return Ok(new { message = "Password reset link has been sent to your email" });
@@ -90,7 +90,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto resetPasswordDto)
     {
         var result = await _authService.ResetPasswordAsync(resetPasswordDto);
-        if (!result.Succeeded)
+        if (!result.IsSuccess)
             return BadRequest(result.Message);
 
         return Ok(new { message = "Password has been reset successfully" });

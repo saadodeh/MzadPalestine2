@@ -18,11 +18,12 @@ public class Listing : BaseEntity, ISoftDelete
     public ListingStatus Status { get; set; }
     public bool IsAuction { get; set; }
     public bool IsDeleted { get; set; }
+    public bool IsFeatured { get; set; }
     public DateTime? DeletedAt { get; set; }
     public string? DeletedBy { get; set; }
-        // ÇáÎÕÇÆÕ ÇáÃÎÑì
-        public string SellerId { get; set; }  // ŞÏ Êßæä ãä ÇáäæÚ string Ãæ int¡ ÍÓÈ åíßá ãÔÑæÚß
-        public virtual ApplicationUser Seller { get; set; }  // íãËá ÇáãÓÊÎÏã (ÇáÈÇÆÚ
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        public string SellerId { get; set; }  // ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ string ï¿½ï¿½ intï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        public virtual ApplicationUser Seller { get; set; }  // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     // Navigation properties
     public ApplicationUser User { get; set; }
     public Category Category { get; set; }

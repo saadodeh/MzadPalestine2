@@ -10,6 +10,7 @@ public class WalletTransaction : BaseEntity
     public decimal Amount { get; set; }
     public TransactionType Type { get; set; }
     public TransactionStatus Status { get; set; }
+    public string Description { get; set; } = string.Empty;
     public int? PaymentId { get; set; }
     public DateTime CreatedAt { get; set; }
 

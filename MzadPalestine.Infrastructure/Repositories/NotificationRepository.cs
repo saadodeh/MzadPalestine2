@@ -1,168 +1,79 @@
-﻿using MzadPalestine.Core.Interfaces;
+﻿using Microsoft.EntityFrameworkCore;
+using MzadPalestine.Core.Interfaces;
+using MzadPalestine.Core.Interfaces.Repositories;
 using MzadPalestine.Core.Models;
 using MzadPalestine.Core.Models.Common;
 using MzadPalestine.Infrastructure.Data;
 using System.Linq.Expressions;
 
-public class NotificationRepository:INotificationRepository
+namespace MzadPalestine.Infrastructure.Repositories;
+
+public class NotificationRepository : GenericRepository<Notification>, INotificationRepository
 {
     private readonly ApplicationDbContext _context;
 
-    public NotificationRepository(ApplicationDbContext context)
+    public NotificationRepository(ApplicationDbContext context) : base(context)
     {
         _context = context;
     }
 
-    public Task AddAsync(Notification entity)
+    public async Task<IEnumerable<Notification>> GetRecentNotificationsAsync(string userId, int count)
     {
-        throw new NotImplementedException();
+        return await _context.Notifications
+            .Where(n => n.UserId == userId)
+            .OrderByDescending(n => n.CreatedAt)
+            .Take(count)
+            .ToListAsync();
     }
 
-    // إضافة إشعار
-    public async Task AddNotificationAsync(Notification notification)
+    public async Task<int> GetUnreadNotificationsCountAsync(string userId)
     {
-        await _context.Notifications.AddAsync(notification);
+        return await _context.Notifications
+            .CountAsync(n => n.UserId == userId && !n.IsRead);
+    }
+
+    public async Task<PagedList<Notification>> GetUserNotificationsAsync(string userId, PaginationParams parameters)
+    {
+        var query = _context.Notifications
+            .Where(n => n.UserId == userId)
+            .OrderByDescending(n => n.CreatedAt);
+
+        return await PagedList<Notification>.CreateAsync(query, parameters.PageNumber, parameters.PageSize);
+    }
+
+    public async Task MarkAsReadAsync(int notificationId)
+    {
+        var notification = await _context.Notifications.FindAsync(notificationId);
+        if (notification != null)
+        {
+            notification.IsRead = true;
+            await _context.SaveChangesAsync();
+        }
+    }
+
+    public async Task MarkAllAsReadAsync(string userId)
+    {
+        var notifications = await _context.Notifications
+            .Where(n => n.UserId == userId && !n.IsRead)
+            .ToListAsync();
+
+        foreach (var notification in notifications)
+        {
+            notification.IsRead = true;
+        }
+
         await _context.SaveChangesAsync();
     }
 
-    public Task AddRangeAsync(IEnumerable<Notification> entities)
+    public async Task DeleteOldNotificationsAsync(int daysOld)
     {
-        throw new NotImplementedException();
-    }
+        var cutoffDate = DateTime.UtcNow.AddDays(-daysOld);
+        var oldNotifications = await _context.Notifications
+            .Where(n => n.CreatedAt < cutoffDate)
+            .ToListAsync();
 
-    public Task<bool> AnyAsync(Expression<Func<Notification, bool>> predicate)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<int> CountAsync(Expression<Func<Notification, bool>>? predicate = null)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task DeleteOldNotificationsAsync(int daysOld)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<bool> ExistsAsync(int id)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<IEnumerable<Notification>> FindAsync(Expression<Func<Notification, bool>> predicate)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<Notification?> FirstOrDefaultAsync(Expression<Func<Notification, bool>> predicate)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<IEnumerable<Notification>> GetAllAsync()
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<IEnumerable<Notification>> GetAllWithIncludesAsync(params Expression<Func<Notification, object>>[] includes)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<Notification?> GetByIdAsync(int id)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<Notification?> GetNotificationWithDetailsAsync(int notificationId)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<PagedList<Notification>> GetPagedAsync(PaginationParams parameters)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<PagedList<Notification>> GetPagedWithIncludesAsync(PaginationParams parameters, params Expression<Func<Notification, object>>[] includes)
-    {
-        throw new NotImplementedException();
-    }
-
-    public IQueryable<Notification> GetQueryable()
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<IEnumerable<Notification>> GetRecentNotificationsAsync(string userId, int count)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<int> GetUnreadNotificationsCountAsync(string userId)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<PagedList<Notification>> GetUserNotificationsAsync(string userId, PaginationParams parameters)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<bool> HasUserEnabledNotificationTypeAsync(string userId, NotificationType type)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<bool> IsNotificationRecipientAsync(string userId, int notificationId)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<Notification?> LastOrDefaultAsync(Expression<Func<Notification, bool>> predicate)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task MarkAllAsReadAsync(string userId)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task MarkAsReadAsync(int notificationId)
-    {
-        throw new NotImplementedException();
-    }
-
-    public void Remove(Notification entity)
-    {
-        throw new NotImplementedException();
-    }
-
-    public void RemoveRange(IEnumerable<Notification> entities)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<int> SaveChangesAsync()
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<Notification?> SingleOrDefaultAsync(Expression<Func<Notification, bool>> predicate)
-    {
-        throw new NotImplementedException();
-    }
-
-    public void Update(Notification entity)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task UpdateUserNotificationPreferencesAsync(string userId, IEnumerable<NotificationType> enabledTypes)
-    {
-        throw new NotImplementedException();
+        _context.Notifications.RemoveRange(oldNotifications);
+        await _context.SaveChangesAsync();
     }
 
     // استرجاع جميع الإشعارات

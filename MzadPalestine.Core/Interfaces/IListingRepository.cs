@@ -1,21 +1,28 @@
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using MzadPalestine.Core.Models;
 using MzadPalestine.Core.Models.Common;
 using MzadPalestine.Core.Models.Enums;
 
 namespace MzadPalestine.Core.Interfaces;
 
-public interface IListingRepository : IGenericRepository<Listing>
+public interface IListingRepository : IRepository<Listing>
 {
-    Task<Listing?> GetListingWithDetailsAsync(int listingId);
-    Task<PagedList<Listing>> GetUserListingsAsync(string userId, PaginationParams parameters);
-    Task<PagedList<Listing>> SearchListingsAsync(string searchTerm, PaginationParams parameters);
-    Task<PagedList<Listing>> GetListingsByCategoryAsync(int categoryId, PaginationParams parameters);
-    Task<PagedList<Listing>> GetListingsByLocationAsync(int locationId, PaginationParams parameters);
-    Task<IEnumerable<Listing>> GetFeaturedListingsAsync();
-    Task<IEnumerable<Listing>> GetRelatedListingsAsync(int listingId, int count);
-    Task<bool> IsListingOwnedByUserAsync(int listingId, string userId);
-    Task<bool> HasActiveAuctionAsync(int listingId);
-    Task UpdateListingStatusAsync(int listingId, ListingStatus status);
-    Task<int> GetUserListingsCountAsync(string userId);
-    Task<Dictionary<ListingStatus, int>> GetListingStatisticsAsync();
+    Task<PagedList<Listing>> GetListingsAsync(PaginationParams parameters);
+    Task<PagedList<Listing>> GetPagedListingsAsync(
+        int pageNumber ,
+        int pageSize ,
+        string? searchTerm = null ,
+        int? categoryId = null ,
+        int? locationId = null ,
+        ListingStatus? status = null);
+    Task<Listing?> GetListingByIdAsync(int id);
+    Task<IEnumerable<Listing>> GetListingsByUserIdAsync(string userId);
+    Task<IEnumerable<Listing>> GetActiveListingsAsync( );
+    Task<IEnumerable<Listing>> GetFeaturedListingsAsync( );
+    Task<bool> IsListingOwnerAsync(int listingId , string userId);
+    Task<bool> UpdateListingStatusAsync(int listingId , bool isActive);
+    Task<IEnumerable<Listing>> SearchListingsAsync(string searchTerm);
+    Task<int> GetTotalListingsCountAsync( );
+    Task<Listing?> GetListingDetailsAsync(int id);
 }

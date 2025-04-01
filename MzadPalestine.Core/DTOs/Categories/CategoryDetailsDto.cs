@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using MzadPalestine.Core.DTOs.Categories;
+
 public class CategoryDetailsDto
 {
     public int Id { get; set; }

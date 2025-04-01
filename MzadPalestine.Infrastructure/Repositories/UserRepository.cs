@@ -12,7 +12,7 @@ public class UserRepository : IUserRepository
     private readonly ApplicationDbContext _context;
     private readonly UserManager<ApplicationUser> _userManager;
 
-    public UserRepository(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+    public UserRepository(ApplicationDbContext context , UserManager<ApplicationUser> userManager)
     {
         _context = context;
         _userManager = userManager;
@@ -24,12 +24,43 @@ public class UserRepository : IUserRepository
         return await _context.SaveChangesAsync() > 0;
     }
 
-    public async Task<IEnumerable<ApplicationUser>> GetAllAsync()
+    public async Task<ApplicationUser> GetByEmailAsync(string email)
     {
         return await _context.Users
             .Include(u => u.Wallet)
-            .OrderByDescending(u => u.CreatedAt)
+            .FirstOrDefaultAsync(u => u.Email == email);
+    }
+
+    public async Task<PagedResult<ApplicationUser>> GetAllAsync(PaginationParams parameters)
+    {
+        var query = _context.Users
+            .Include(u => u.Wallet)
+            .OrderByDescending(u => u.CreatedAt);
+
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+            .Take(parameters.PageSize)
             .ToListAsync();
+
+        return new PagedResult<ApplicationUser>
+        {
+            Items = items ,
+            TotalCount = totalCount ,
+            PageNumber = parameters.PageNumber ,
+            PageSize = parameters.PageSize ,
+            TotalPages = (int)Math.Ceiling(totalCount / (double)parameters.PageSize)
+        };
+    }
+
+    public async Task<bool> ExistsByEmailAsync(string email)
+    {
+        return await _context.Users.AnyAsync(u => u.Email == email);
+    }
+
+    public async Task<bool> ExistsByIdAsync(string id)
+    {
+        return await _context.Users.AnyAsync(u => u.Id == id);
     }
 
     public async Task<ApplicationUser?> GetByIdAsync(string id)
@@ -56,9 +87,11 @@ public class UserRepository : IUserRepository
         return await UpdateAsync(user);
     }
 
-    public async Task<IEnumerable<ApplicationUser>> GetAllUsersAsync()
+    public async Task<IEnumerable<ApplicationUser>> GetAllUsersAsync( )
     {
-        return await GetAllAsync();
+        var parameters = new PaginationParams(); // Using default pagination parameters
+        var pagedResult = await GetAllAsync(parameters);
+        return pagedResult.Items;
     }
 
     public async Task<ApplicationUser?> GetUserByIdAsync(string userId)
@@ -82,13 +115,13 @@ public class UserRepository : IUserRepository
             .ToListAsync();
     }
 
-    public async Task<bool> IsInRoleAsync(string userId, string roleName)
+    public async Task<bool> IsInRoleAsync(string userId , string roleName)
     {
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null)
             return false;
 
-        return await _userManager.IsInRoleAsync(user, roleName);
+        return await _userManager.IsInRoleAsync(user , roleName);
     }
 
     public async Task<IEnumerable<string>> GetUserRolesAsync(string userId)
@@ -104,8 +137,8 @@ public class UserRepository : IUserRepository
     {
         return await _context.Users
             .Include(u => u.Wallet)
-            .Where(u => 
-                u.UserName.Contains(searchTerm) || 
+            .Where(u =>
+                u.UserName.Contains(searchTerm) ||
                 u.Email.Contains(searchTerm) ||
                 u.PhoneNumber.Contains(searchTerm))
             .OrderByDescending(u => u.CreatedAt)
@@ -133,7 +166,7 @@ public class UserRepository : IUserRepository
         var user = await _context.Users
             .Include(u => u.Wallet)
             .FirstOrDefaultAsync(u => u.Id == userId);
-        
+
         return user?.Wallet?.Balance ?? 0;
     }
 }

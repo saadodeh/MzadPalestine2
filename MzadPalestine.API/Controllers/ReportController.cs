@@ -14,7 +14,7 @@ public class ReportController : ControllerBase
     private readonly IReportService _reportService;
     private readonly ICurrentUserService _currentUserService;
 
-    public ReportController(IReportService reportService, ICurrentUserService currentUserService)
+    public ReportController(IReportService reportService , ICurrentUserService currentUserService)
     {
         _reportService = reportService;
         _currentUserService = currentUserService;
@@ -23,60 +23,43 @@ public class ReportController : ControllerBase
     [HttpPost("submit")]
     public async Task<IActionResult> SubmitReport([FromBody] CreateReportDto reportDto)
     {
-        var userId = _currentUserService.GetUserId();
-        var result = await _reportService.CreateReportAsync(userId, reportDto);
-        
-        if (!result.Succeeded)
-            return BadRequest(result.Message);
-
-        return CreatedAtAction(nameof(GetReport), new { reportId = result.Data.Id }, result.Data);
+        var result = await _reportService.CreateReportAsync(reportDto , _currentUserService.UserId!);
+        return Ok(result);
     }
 
     [HttpGet("user/{userId}")]
-    public async Task<IActionResult> GetUserReports(string userId, [FromQuery] PaginationParams parameters)
+    public async Task<IActionResult> GetUserReports(string userId)
     {
-        var currentUserId = _currentUserService.GetUserId();
-        if (currentUserId != userId && !User.IsInRole("Admin"))
+        if (_currentUserService.UserId != userId && !_currentUserService.IsAdmin)
             return Forbid();
 
-        var result = await _reportService.GetUserReportsAsync(userId, parameters);
+        var result = await _reportService.GetUserReportsAsync(userId);
         return Ok(result);
     }
 
     [HttpGet("{reportId}")]
-    public async Task<IActionResult> GetReport(int reportId)
+    public async Task<IActionResult> GetReport(string reportId)
     {
-        var userId = _currentUserService.GetUserId();
-        var result = await _reportService.GetReportByIdAsync(userId, reportId);
-        
-        if (!result.Succeeded)
-            return NotFound(result.Message);
+        var result = await _reportService.GetReportByIdAsync(reportId);
 
-        return Ok(result.Data);
+        if (result == null)
+            return NotFound();
+
+        return Ok(result);
     }
 
     [HttpPut("update/{reportId}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> UpdateReportStatus(int reportId, [FromBody] UpdateReportStatusDto updateDto)
+    public async Task<IActionResult> UpdateReportStatus([FromBody] UpdateReportStatusDto updateDto)
     {
-        var adminId = _currentUserService.GetUserId();
-        var result = await _reportService.UpdateReportStatusAsync(adminId, reportId, updateDto);
-        
-        if (!result.Succeeded)
-            return BadRequest(result.Message);
-
-        return Ok(result.Data);
+        var result = await _reportService.UpdateReportStatusAsync(updateDto , _currentUserService.UserId!);
+        return Ok(result);
     }
 
-    [HttpPost("comment/{reportId}")]
-    public async Task<IActionResult> AddReportComment(int reportId, [FromBody] AddReportCommentDto commentDto)
+    [HttpPost("comment")]
+    public async Task<IActionResult> AddReportComment([FromBody] AddReportCommentDto commentDto)
     {
-        var userId = _currentUserService.GetUserId();
-        var result = await _reportService.AddReportCommentAsync(userId, reportId, commentDto);
-        
-        if (!result.Succeeded)
-            return BadRequest(result.Message);
-
-        return Ok(result.Data);
+        var result = await _reportService.AddReportCommentAsync(commentDto , _currentUserService.UserId!);
+        return Ok(result);
     }
 }

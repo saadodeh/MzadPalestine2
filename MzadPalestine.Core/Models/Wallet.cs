@@ -7,6 +7,9 @@ public class Wallet : BaseEntity
     public int Id { get; set; }
     public int UserId { get; set; } 
     public decimal Balance { get; set; }
+    public decimal PendingBalance { get; set; }
+    public decimal TotalDeposited { get; set; }
+    public decimal TotalWithdrawn { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public byte[] RowVersion { get; set; }  // إضافة للتعامل مع التزامن

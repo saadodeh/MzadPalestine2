@@ -16,7 +16,7 @@ public class AuctionDetailsDto
     public string Status { get; set; } = string.Empty;
     public string? ImageUrl { get; set; }
     public UserDto? Winner { get; set; }
-    public List<BidDto> RecentBids { get; set; } = new();
+    public List<MzadPalestine.Core.DTOs.Bids.BidDto> RecentBids { get; set; } = new();
     public int TotalBids { get; set; }
     public int WatchCount { get; set; }
     public bool IsWatched { get; set; }

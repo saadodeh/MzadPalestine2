@@ -1,6 +1,9 @@
 using Microsoft.Extensions.Options;
+using MzadPalestine.Core.DTOs.Payments;
+using MzadPalestine.Core.DTOs.Transactions;
 using MzadPalestine.Core.Interfaces.Services;
 using MzadPalestine.Core.Models;
+using MzadPalestine.Core.Models.Common;
 using MzadPalestine.Core.Settings;
 
 namespace MzadPalestine.Infrastructure.Services.Payment;
@@ -12,8 +15,8 @@ public class PaymentService : IPaymentService
     private readonly IEmailService _emailService;
 
     public PaymentService(
-        IOptions<PaymentSettings> settings,
-        ICurrentUserService currentUserService,
+        IOptions<PaymentSettings> settings ,
+        ICurrentUserService currentUserService ,
         IEmailService emailService)
     {
         _settings = settings.Value;
@@ -21,7 +24,7 @@ public class PaymentService : IPaymentService
         _emailService = emailService;
     }
 
-    public async Task<string> InitiatePaymentAsync(int amount, string currency)
+    public async Task<string> InitiatePaymentAsync(int amount , string currency)
     {
         // Validate currency
         if (!_settings.AllowedCurrencies.Contains(currency))
@@ -34,7 +37,7 @@ public class PaymentService : IPaymentService
         return Guid.NewGuid().ToString();
     }
 
-    public async Task<bool> ProcessPaymentAsync(string paymentMethodId, string currency)
+    public async Task<bool> ProcessPaymentAsync(string paymentMethodId , string currency)
     {
         try
         {
@@ -62,9 +65,34 @@ public class PaymentService : IPaymentService
         return true;
     }
 
-    public async Task ProcessPendingPaymentsAsync()
+    public async Task ProcessPendingPaymentsAsync( )
     {
         // Placeholder implementation
         await Task.Delay(1000);
+    }
+
+    public Task<Result<PaymentResultDto>> ProcessPaymentAsync(string userId , Core.DTOs.Payments.ProcessPaymentDto paymentDto)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<Result<RefundResultDto>> RefundPaymentAsync(string userId , string transactionId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<Result<TransactionDto>> GetTransactionByIdAsync(string transactionId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<PagedList<TransactionDto>> GetUserTransactionsAsync(string userId , PaginationParams parameters)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<Result<PaymentResultDto>> ProcessPaymentAsync(string userId , TransactionPaymentDto paymentDto)
+    {
+        throw new NotImplementedException();
     }
 }

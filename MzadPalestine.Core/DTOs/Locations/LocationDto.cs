@@ -11,7 +11,7 @@ public class LocationDto
     public double? Longitude { get; set; }
     public string? Type { get; set; }
     public int DisplayOrder { get; set; }
-    public int ItemsCount { get; set; }
+    public int ListingCount { get; set; }
     public List<LocationDto> Children { get; set; } = new();
 }
 

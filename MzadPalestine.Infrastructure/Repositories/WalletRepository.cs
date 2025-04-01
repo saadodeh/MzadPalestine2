@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using MzadPalestine.Core.Interfaces;
 using MzadPalestine.Core.Interfaces.Repositories;
 using MzadPalestine.Core.Models;
+using MzadPalestine.Core.Models.Common;
 using MzadPalestine.Core.Models.Enums;
 using MzadPalestine.Infrastructure.Data;
 
@@ -15,14 +17,14 @@ public class WalletRepository : BaseRepository<Wallet>, IWalletRepository
         _context = context;
     }
 
-    public async Task<Wallet> GetByUserIdAsync(int  userId)
+    public async Task<Wallet> GetByUserIdAsync(int userId)
     {
         var wallet = await _context.Wallets
             .FirstOrDefaultAsync(w => w.UserId == userId);
 
         if (wallet == null)
         {
-            wallet = new Wallet { UserId = userId, Balance = 0 };
+            wallet = new Wallet { UserId = userId , Balance = 0 };
             _context.Wallets.Add(wallet);
             await _context.SaveChangesAsync();
         }
@@ -61,7 +63,7 @@ public class WalletRepository : BaseRepository<Wallet>, IWalletRepository
         return transaction;
     }
 
-    public async Task<IEnumerable<WalletTransaction>> GetTransactionHistoryAsync(int userId, int page = 1, int pageSize = 10)
+    public async Task<IEnumerable<WalletTransaction>> GetTransactionHistoryAsync(int userId , int page = 1 , int pageSize = 10)
     {
         return await _context.WalletTransactions
             .Where(t => t.UserId == userId)
@@ -77,7 +79,7 @@ public class WalletRepository : BaseRepository<Wallet>, IWalletRepository
         return wallet.Balance;
     }
 
-    public async Task<bool> HasSufficientBalanceAsync(string userId, decimal amount)
+    public async Task<bool> HasSufficientBalanceAsync(string userId , decimal amount)
     {
         var balance = await GetBalanceAsync(userId);
         return balance >= amount;
@@ -90,7 +92,7 @@ public class WalletRepository : BaseRepository<Wallet>, IWalletRepository
             .FirstOrDefaultAsync(w => w.UserId == userId);
     }
 
-    public async Task<WalletTransaction> AddTransactionAsync(int userId, decimal amount, TransactionType type, string description)
+    public async Task<WalletTransaction> AddTransactionAsync(int userId , decimal amount , TransactionType type , string description)
     {
         var wallet = await _dbSet
             .Include(w => w.Transactions)
@@ -103,10 +105,10 @@ public class WalletRepository : BaseRepository<Wallet>, IWalletRepository
 
         var transaction = new WalletTransaction
         {
-            Id = wallet.Id,
-            Amount = amount,
-            Type = type,
-            Status = TransactionStatus.Completed,
+            Id = wallet.Id ,
+            Amount = amount ,
+            Type = type ,
+            Status = TransactionStatus.Completed ,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -131,9 +133,9 @@ public class WalletRepository : BaseRepository<Wallet>, IWalletRepository
     }
 
     public async Task<IEnumerable<WalletTransaction>> GetUserTransactionsAsync(
-        int userId, 
-        DateTime? startDate = null, 
-        DateTime? endDate = null,
+        int userId ,
+        DateTime? startDate = null ,
+        DateTime? endDate = null ,
         TransactionType? type = null)
     {
         var wallet = await _dbSet
@@ -166,9 +168,9 @@ public class WalletRepository : BaseRepository<Wallet>, IWalletRepository
     }
 
     public async Task<decimal> GetTotalTransactionsAmountAsync(
-        int userId, 
-        TransactionType type, 
-        DateTime? startDate = null, 
+        int userId ,
+        TransactionType type ,
+        DateTime? startDate = null ,
         DateTime? endDate = null)
     {
         var wallet = await _dbSet
@@ -201,7 +203,47 @@ public class WalletRepository : BaseRepository<Wallet>, IWalletRepository
         throw new NotImplementedException();
     }
 
-    public Task<IEnumerable<WalletTransaction>> GetTransactionHistoryAsync(string userId, int page = 1, int pageSize = 10)
+    public Task<IEnumerable<WalletTransaction>> GetTransactionHistoryAsync(string userId , int page = 1 , int pageSize = 10)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<Wallet?> GetUserWalletAsync(string userId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<bool> UpdateBalanceAsync(string userId , decimal amount)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<IEnumerable<WalletTransaction>> GetTransactionHistoryAsync(string userId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<PagedList<WalletTransaction>> GetPagedTransactionHistoryAsync(string userId , PaginationParams parameters)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<WalletTransaction?> GetTransactionByIdAsync(string transactionId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<bool> CreateTransactionAsync(WalletTransaction transaction)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<IEnumerable<WalletTransaction>> GetUserTransactionsAsync(string userId , DateTime? startDate = null , DateTime? endDate = null , TransactionType? type = null)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<WalletTransaction> AddTransactionAsync(string userId , decimal amount , TransactionType type , string description)
     {
         throw new NotImplementedException();
     }

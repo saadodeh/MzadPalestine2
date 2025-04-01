@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MzadPalestine.Core.DTOs.Listings;
-using MzadPalestine.Core.Interfaces.Repositories;
+using MzadPalestine.Core.DTOs.Auctions;
+using MzadPalestine.Core.Interfaces;
 using MzadPalestine.Core.Interfaces.Services;
 using MzadPalestine.Core.Models;
 using MzadPalestine.Core.Models.Common;
 using MzadPalestine.Core.Models.Enums;
+using MzadPalestine.Infrastructure.Repositories;
 
 namespace MzadPalestine.API.Controllers;
 
@@ -17,9 +19,9 @@ public class ListingsController : BaseApiController
     private readonly ICacheService _cacheService;
 
     public ListingsController(
-        IListingRepository listingRepository,
-        ICurrentUserService currentUserService,
-        IFileStorageService fileStorageService,
+        IListingRepository listingRepository ,
+        ICurrentUserService currentUserService ,
+        IFileStorageService fileStorageService ,
         ICacheService cacheService)
     {
         _listingRepository = listingRepository;
@@ -28,9 +30,14 @@ public class ListingsController : BaseApiController
         _cacheService = cacheService;
     }
 
+    public Task<ActionResult<PagedList<ListingDto>>> GetListings([FromQuery] ListingParams parameters)
+    {
+        return GetListings(parameters , _listingRepository);
+    }
+
     [HttpGet]
     public async Task<ActionResult<PagedList<ListingDto>>> GetListings(
-        [FromQuery] ListingParams parameters)
+        [FromQuery] ListingParams parameters , IListingRepository _listingRepository)
     {
         var cacheKey = $"listings_{parameters}";
         var cachedResult = await _cacheService.GetAsync<PagedList<ListingDto>>(cacheKey);
@@ -41,35 +48,35 @@ public class ListingsController : BaseApiController
         }
 
         var listings = await _listingRepository.GetPagedListingsAsync(
-            parameters.PageNumber,
-            parameters.PageSize,
-            parameters.SearchTerm,
-            parameters.CategoryId,
-            parameters.LocationId,
+            parameters.PageNumber ,
+            parameters.PageSize ,
+            parameters.SearchTerm ,
+            parameters.CategoryId ,
+            parameters.LocationId ,
             parameters.Status);
 
         var result = new PagedList<ListingDto>(
             listings.Items.Select(l => new ListingDto
             {
-                Id = l.Id,
-                Title = l.Title,
-                Description = l.Description,
-                StartingPrice = l.StartingPrice,
-                Status = l.Status,
-                CategoryId = l.CategoryId,
-                CategoryName = l.Category?.Name,
-                LocationId = l.LocationId,
-                LocationName = l.Location?.Name,
-                SellerId = l.SellerId,
-                SellerName = $"{l.Seller?.FirstName} {l.Seller?.LastName}",
-                Images = l.Images.Select(i => i.Url).ToList(),
+                Id = l.Id ,
+                Title = l.Title ,
+                Description = l.Description ,
+                StartingPrice = l.StartingPrice ,
+                Status = l.Status ,
+                CategoryId = l.CategoryId ,
+                CategoryName = l.Category?.Name ,
+                LocationId = l.LocationId ,
+                LocationName = l.Location?.Name ,
+                SellerId = l.SellerId ,
+                SellerName = $"{l.Seller?.FirstName} {l.Seller?.LastName}" ,
+                Images = l.Images.Select(i => i.Url).ToList() ,
                 CreatedAt = l.CreatedAt
-            }).ToList(),
-            listings.TotalCount,
-            listings.CurrentPage,
+            }).ToList() ,
+            listings.TotalCount ,
+            listings.CurrentPage ,
             listings.PageSize);
 
-        await _cacheService.SetAsync(cacheKey, result, TimeSpan.FromMinutes(5));
+        await _cacheService.SetAsync(cacheKey , result , TimeSpan.FromMinutes(5));
 
         return result;
     }
@@ -94,32 +101,32 @@ public class ListingsController : BaseApiController
 
         var result = new ListingDetailsDto
         {
-            Id = listing.Id,
-            Title = listing.Title,
-            Description = listing.Description,
-            StartingPrice = listing.StartingPrice,
-            Status = listing.Status,
-            CategoryId = listing.CategoryId,
-            CategoryName = listing.Category?.Name,
-            LocationId = listing.LocationId,
-            LocationName = listing.Location?.Name,
-            SellerId = listing.SellerId,
-            SellerName = $"{listing.Seller?.FirstName} {listing.Seller?.LastName}",
-            SellerRating = listing.Seller?.Rating ?? 0,
-            Images = listing.Images.Select(i => i.Url).ToList(),
-            CreatedAt = listing.CreatedAt,
+            Id = listing.Id ,
+            Title = listing.Title ,
+            Description = listing.Description ,
+            StartingPrice = listing.StartingPrice ,
+            Status = listing.Status ,
+            CategoryId = listing.CategoryId ,
+            CategoryName = listing.Category?.Name ,
+            LocationId = listing.LocationId ,
+            LocationName = listing.Location?.Name ,
+            SellerId = listing.SellerId ,
+            SellerName = $"{listing.Seller?.FirstName} {listing.Seller?.LastName}" ,
+            SellerRating = listing.Seller?.Rating ?? 0 ,
+            Images = listing.Images.Select(i => i.Url).ToList() ,
+            CreatedAt = listing.CreatedAt ,
             Auction = listing.Auction != null ? new AuctionDto
             {
-                Id = listing.Auction.Id,
-                StartDate = listing.Auction.StartDate,
-                EndDate = listing.Auction.EndDate,
-                CurrentPrice = listing.Auction.CurrentPrice,
-                Status = listing.Auction.Status,
+                Id = listing.Auction.Id ,
+                StartDate = listing.Auction.StartDate ,
+                EndDate = listing.Auction.EndDate ,
+                CurrentPrice = listing.Auction.CurrentPrice ,
+                Status = listing.Auction.Status ,
                 BidCount = listing.Auction.Bids.Count
             } : null
         };
 
-        await _cacheService.SetAsync(cacheKey, result, TimeSpan.FromMinutes(5));
+        await _cacheService.SetAsync(cacheKey , result , TimeSpan.FromMinutes(5));
 
         return result;
     }
@@ -130,13 +137,13 @@ public class ListingsController : BaseApiController
     {
         var listing = new Listing
         {
-            Title = request.Title,
-            Description = request.Description,
-            StartingPrice = request.StartingPrice,
-            CategoryId = request.CategoryId,
-            LocationId = request.LocationId,
-            SellerId = _currentUserService.UserId!,
-            Status = ListingStatus.Pending,
+            Title = request.Title ,
+            Description = request.Description ,
+            StartingPrice = request.StartingPrice ,
+            CategoryId = request.CategoryId ,
+            LocationId = request.LocationId ,
+            SellerId = _currentUserService.GetUserId() ,
+            Status = ListingStatus.Pending ,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -144,31 +151,31 @@ public class ListingsController : BaseApiController
         {
             foreach (var image in request.Images)
             {
-                var imageUrl = await _fileStorageService.SaveFileAsync(image, "listings");
-                listing.Images.Add(new ListingImage { Url = imageUrl });
+                var imageUrl = await _fileStorageService.SaveFileAsync(image.OpenReadStream() , "listings");
+                listing.Images.Add(new ListingImage { ImageUrl = imageUrl });
             }
         }
 
         await _listingRepository.AddAsync(listing);
 
-        return CreatedAtAction(nameof(GetListing), new { id = listing.Id }, new ListingDto
+        return CreatedAtAction(nameof(GetListing) , new { id = listing.Id } , new ListingDto
         {
-            Id = listing.Id,
-            Title = listing.Title,
-            Description = listing.Description,
-            StartingPrice = listing.StartingPrice,
-            Status = listing.Status,
-            CategoryId = listing.CategoryId,
-            LocationId = listing.LocationId,
-            SellerId = listing.SellerId,
-            Images = listing.Images.Select(i => i.Url).ToList(),
+            Id = listing.Id ,
+            Title = listing.Title ,
+            Description = listing.Description ,
+            StartingPrice = listing.StartingPrice ,
+            Status = listing.Status ,
+            CategoryId = listing.CategoryId ,
+            LocationId = listing.LocationId ,
+            SellerId = listing.SellerId ,
+            Images = listing.Images.Select(i => i.Url).ToList() ,
             CreatedAt = listing.CreatedAt
         });
     }
 
     [Authorize]
     [HttpPut("{id}")]
-    public async Task<ActionResult<ListingDto>> UpdateListing(int id, UpdateListingRequest request)
+    public async Task<ActionResult<ListingDto>> UpdateListing(int id , UpdateListingRequest request)
     {
         var listing = await _listingRepository.GetByIdAsync(id);
 
@@ -177,7 +184,7 @@ public class ListingsController : BaseApiController
             return NotFound();
         }
 
-        if (listing.SellerId != _currentUserService.UserId)
+        if (listing.SellerId != _currentUserService.GetUserId())
         {
             return Forbid();
         }
@@ -200,15 +207,15 @@ public class ListingsController : BaseApiController
 
         return new ListingDto
         {
-            Id = listing.Id,
-            Title = listing.Title,
-            Description = listing.Description,
-            StartingPrice = listing.StartingPrice,
-            Status = listing.Status,
-            CategoryId = listing.CategoryId,
-            LocationId = listing.LocationId,
-            SellerId = listing.SellerId,
-            Images = listing.Images.Select(i => i.Url).ToList(),
+            Id = listing.Id ,
+            Title = listing.Title ,
+            Description = listing.Description ,
+            StartingPrice = listing.StartingPrice ,
+            Status = listing.Status ,
+            CategoryId = listing.CategoryId ,
+            LocationId = listing.LocationId ,
+            SellerId = listing.SellerId ,
+            Images = listing.Images.Select(i => i.Url).ToList() ,
             CreatedAt = listing.CreatedAt
         };
     }
@@ -224,7 +231,7 @@ public class ListingsController : BaseApiController
             return NotFound();
         }
 
-        if (listing.SellerId != _currentUserService.UserId && !_currentUserService.IsAdmin)
+        if (listing.SellerId != _currentUserService.GetUserId() && !_currentUserService.IsAdmin)
         {
             return Forbid();
         }
@@ -250,7 +257,7 @@ public class ListingsController : BaseApiController
 
     [Authorize]
     [HttpPost("{id}/images")]
-    public async Task<ActionResult<IEnumerable<string>>> AddListingImages(int id, [FromForm] IFormFileCollection images)
+    public async Task<ActionResult<IEnumerable<string>>> AddListingImages(int id , [FromForm] IFormFileCollection images)
     {
         var listing = await _listingRepository.GetByIdAsync(id);
 
@@ -259,7 +266,7 @@ public class ListingsController : BaseApiController
             return NotFound();
         }
 
-        if (listing.SellerId != _currentUserService.UserId)
+        if (listing.SellerId != _currentUserService.GetUserId())
         {
             return Forbid();
         }
@@ -268,8 +275,8 @@ public class ListingsController : BaseApiController
 
         foreach (var image in images)
         {
-            var imageUrl = await _fileStorageService.SaveFileAsync(image, "listings");
-            listing.Images.Add(new ListingImage { Url = imageUrl });
+            var imageUrl = await _fileStorageService.SaveFileAsync(image.OpenReadStream() , "listings");
+            listing.Images.Add(new ListingImage { ImageUrl = imageUrl });
             imageUrls.Add(imageUrl);
         }
 
@@ -283,7 +290,7 @@ public class ListingsController : BaseApiController
 
     [Authorize]
     [HttpDelete("{id}/images/{imageId}")]
-    public async Task<IActionResult> DeleteListingImage(int id, int imageId)
+    public async Task<IActionResult> DeleteListingImage(int id , int imageId)
     {
         var listing = await _listingRepository.GetByIdAsync(id);
 
@@ -292,7 +299,7 @@ public class ListingsController : BaseApiController
             return NotFound();
         }
 
-        if (listing.SellerId != _currentUserService.UserId)
+        if (listing.SellerId != _currentUserService.GetUserId())
         {
             return Forbid();
         }

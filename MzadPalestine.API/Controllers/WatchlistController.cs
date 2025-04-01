@@ -12,9 +12,9 @@ namespace MzadPalestine.API.Controllers;
 public class WatchlistController : ControllerBase
 {
     private readonly IWatchlistService _watchlistService;
-    private readonly ICurrentUserService _currentUserService;
+    private readonly MzadPalestine.Core.Interfaces.Services.ICurrentUserService _currentUserService;
 
-    public WatchlistController(IWatchlistService watchlistService, ICurrentUserService currentUserService)
+    public WatchlistController(IWatchlistService watchlistService, MzadPalestine.Core.Interfaces.Services.ICurrentUserService currentUserService)
     {
         _watchlistService = watchlistService;
         _currentUserService = currentUserService;
@@ -23,9 +23,8 @@ public class WatchlistController : ControllerBase
     [HttpPost("add")]
     public async Task<IActionResult> AddToWatchlist([FromBody] AddToWatchlistDto watchlistDto)
     {
-        var userId = _currentUserService.GetUserId();
-        var result = await _watchlistService.AddToWatchlistAsync(userId, watchlistDto.AuctionId);
-        
+        var result = await _watchlistService.AddToWatchlistAsync(_currentUserService.UserId, watchlistDto.AuctionId);
+
         if (!result.Succeeded)
             return BadRequest(result.Message);
 
@@ -35,9 +34,8 @@ public class WatchlistController : ControllerBase
     [HttpDelete("remove/{auctionId}")]
     public async Task<IActionResult> RemoveFromWatchlist(int auctionId)
     {
-        var userId = _currentUserService.GetUserId();
-        var result = await _watchlistService.RemoveFromWatchlistAsync(userId, auctionId);
-        
+        var result = await _watchlistService.RemoveFromWatchlistAsync(_currentUserService.UserId, auctionId);
+
         if (!result.Succeeded)
             return BadRequest(result.Message);
 
@@ -47,8 +45,7 @@ public class WatchlistController : ControllerBase
     [HttpGet("user/{userId}")]
     public async Task<IActionResult> GetUserWatchlist(string userId, [FromQuery] PaginationParams parameters)
     {
-        var currentUserId = _currentUserService.GetUserId();
-        if (currentUserId != userId)
+        if (_currentUserService.UserId != userId)
             return Forbid();
 
         var result = await _watchlistService.GetUserWatchlistAsync(userId, parameters);
@@ -58,8 +55,7 @@ public class WatchlistController : ControllerBase
     [HttpGet("check/{auctionId}")]
     public async Task<IActionResult> CheckWatchlistStatus(int auctionId)
     {
-        var userId = _currentUserService.GetUserId();
-        var isWatched = await _watchlistService.IsInWatchlistAsync(userId, auctionId);
-        return Ok(new { isWatched });
+        var result = await _watchlistService.CheckWatchlistStatusAsync(_currentUserService.UserId, auctionId);
+        return Ok(result);
     }
 }

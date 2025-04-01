@@ -13,6 +13,8 @@ public class Auction : BaseEntity
     public decimal MinimumBidIncrement { get; set; }
     public AuctionStatus Status { get; set; }
     public int WinnerId { get; set; }
+    public PaymentStatus PaymentStatus { get; set; }
+    public string? PaymentTransactionId { get; set; }
 
     // العلاقات
     public Listing Listing { get; set; }

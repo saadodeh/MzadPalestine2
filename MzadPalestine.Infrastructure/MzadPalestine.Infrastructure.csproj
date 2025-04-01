@@ -8,10 +8,12 @@
 
   <ItemGroup>
     <Folder Include="Data\" />
-    <Folder Include="Interfaces\" />
+    <Folder Include="Services\Notification\" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="12.0.1" />
+    <PackageReference Include="AutoMapper.Collection" Version="9.0.0" />
     <PackageReference Include="Ardalis.Specification" Version="9.0.1" />
     <PackageReference Include="Hangfire.AspNetCore" Version="1.8.18" />
     <PackageReference Include="Hangfire.SqlServer" Version="1.8.18" />
@@ -32,7 +34,9 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="9.0.2" />
     <PackageReference Include="PayPalCoreSDK" Version="1.7.1" />
+    <PackageReference Include="Polly" Version="8.5.2" />
     <PackageReference Include="Stripe.net" Version="47.4.0" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.9.0" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,5 +1,5 @@
 using MediatR;
-using MzadPalestine.Core.DTOs.Listings;
+using MzadPalestine.Core.DTOs.Bids;
 
 namespace MzadPalestine.Core.CQRS.Commands.Auctions;
 

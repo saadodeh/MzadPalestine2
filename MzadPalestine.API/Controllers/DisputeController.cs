@@ -69,7 +69,7 @@ public class DisputeController : ControllerBase
     }
 
     [HttpPost("evidence/{disputeId}")]
-    public async Task<IActionResult> AddDisputeEvidence(int disputeId, [FromForm] AddDisputeEvidenceDto evidenceDto)
+    public async Task<IActionResult> AddDisputeEvidence(int disputeId, [FromForm] AddDisputeEvidenceRequestDto evidenceDto)
     {
         var userId = _currentUserService.GetUserId();
         var result = await _disputeService.AddDisputeEvidenceAsync(userId, disputeId, evidenceDto);

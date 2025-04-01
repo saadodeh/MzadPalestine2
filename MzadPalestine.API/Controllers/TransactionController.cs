@@ -21,7 +21,7 @@ public class TransactionController : ControllerBase
     }
 
     [HttpPost("pay")]
-    public async Task<IActionResult> ProcessPayment([FromBody] ProcessPaymentDto paymentDto)
+    public async Task<IActionResult> ProcessPayment([FromBody] TransactionPaymentDto paymentDto)
     {
         var userId = _currentUserService.GetUserId();
         var result = await _paymentService.ProcessPaymentAsync(userId, paymentDto);
@@ -58,8 +58,7 @@ public class TransactionController : ControllerBase
     [HttpGet("{transactionId}")]
     public async Task<IActionResult> GetTransaction(string transactionId)
     {
-        var userId = _currentUserService.GetUserId();
-        var result = await _paymentService.GetTransactionByIdAsync(userId, transactionId);
+        var result = await _paymentService.GetTransactionByIdAsync(transactionId);
         
         if (!result.Succeeded)
             return NotFound(result.Message);

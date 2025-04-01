@@ -38,14 +38,6 @@ public class GlobalExceptionHandler : IMiddleware
 
         switch (exception)
         {
-            case AppException e:
-                context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-                response.Status = (int)HttpStatusCode.BadRequest;
-                response.Title = "خطأ في الطلب";
-                response.Detail = e.Message;
-                _logger.LogWarning("خطأ في الطلب: {Message}", e.Message);
-                break;
-
             case NotFoundException e:
                 context.Response.StatusCode = (int)HttpStatusCode.NotFound;
                 response.Status = (int)HttpStatusCode.NotFound;
@@ -60,6 +52,14 @@ public class GlobalExceptionHandler : IMiddleware
                 response.Title = "غير مصرح";
                 response.Detail = "غير مصرح لك بالوصول إلى هذا المورد";
                 _logger.LogWarning("محاولة وصول غير مصرح: {Message}", e.Message);
+                break;
+
+            case AppException e:
+                context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                response.Status = (int)HttpStatusCode.BadRequest;
+                response.Title = "خطأ في الطلب";
+                response.Detail = e.Message;
+                _logger.LogWarning("خطأ في الطلب: {Message}", e.Message);
                 break;
 
             default:

@@ -5,7 +5,7 @@ using MzadPalestine.Infrastructure.Data;
 
 namespace MzadPalestine.Infrastructure.Repositories;
 
-public class TagRepository : GenericRepository<Tag>, ITagRepository
+public class TagRepository : GenericRepository<Tag>, Core.Interfaces.ITagRepository
 {
     private readonly ApplicationDbContext _context;
 
@@ -48,7 +48,7 @@ public class TagRepository : GenericRepository<Tag>, ITagRepository
         return listing?.Tags ?? new List<Tag>();
     }
 
-    public async Task AddTagToListingAsync(int listingId, int tagId)
+    public async Task AddTagToListingAsync(int listingId , int tagId)
     {
         var listing = await _context.Listings.FindAsync(listingId);
         var tag = await _context.Tags.FindAsync(tagId);
@@ -60,7 +60,7 @@ public class TagRepository : GenericRepository<Tag>, ITagRepository
         }
     }
 
-    public async Task RemoveTagFromListingAsync(int listingId, int tagId)
+    public async Task RemoveTagFromListingAsync(int listingId , int tagId)
     {
         var listing = await _context.Listings
             .Include(l => l.Tags)

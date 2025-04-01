@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MzadPalestine.Core.DTOs.Categories;
-using MzadPalestine.Core.Interfaces.Repositories;
+using MzadPalestine.Core.Interfaces;
 using MzadPalestine.Core.Interfaces.Services;
 using MzadPalestine.Core.Models;
 using MzadPalestine.Core.Models.Common;
@@ -126,7 +126,10 @@ public class CategoriesController : BaseApiController
 
         if (request.Image != null)
         {
-            category.ImageUrl = await _fileStorageService.SaveFileAsync(request.Image, "categories");
+            using (var stream = request.Image.OpenReadStream())
+            {
+                category.ImageUrl = await _fileStorageService.SaveFileAsync(stream, "categories");
+            }
         }
 
         await _categoryRepository.AddAsync(category);
@@ -168,7 +171,10 @@ public class CategoriesController : BaseApiController
             {
                 await _fileStorageService.DeleteFileAsync(category.ImageUrl);
             }
-            category.ImageUrl = await _fileStorageService.SaveFileAsync(request.Image, "categories");
+            using (var stream = request.Image.OpenReadStream())
+            {
+                category.ImageUrl = await _fileStorageService.SaveFileAsync(stream, "categories");
+            }
         }
 
         await _categoryRepository.UpdateAsync(category);

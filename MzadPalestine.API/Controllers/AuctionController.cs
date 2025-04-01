@@ -87,12 +87,12 @@ public class AuctionController : ControllerBase
     [HttpPut("close/{auctionId}")]
     public async Task<IActionResult> CloseAuction(int auctionId)
     {
-        var userId = _currentUserService.GetUserId();
-        var result = await _auctionService.CloseAuctionAsync(userId, auctionId);
+        var closeResult = await _auctionService.CloseAuctionAsync(auctionId);
+        var result = Result<bool>.CreateSuccess(closeResult, closeResult ? "Auction closed successfully" : "Failed to close auction");
         
         if (!result.Succeeded)
             return BadRequest(result.Message);
 
-        return Ok(new { message = "Auction closed successfully" });
+        return Ok(new { message = result.Message });
     }
 }
