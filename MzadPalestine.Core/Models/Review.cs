@@ -6,7 +6,7 @@ public class Review : BaseEntity
     public int Id { get; set; }
 
     // المستخدم الذي قام بكتابة المراجعة
-    public int ReviewerId { get; set; }
+    public string ReviewerId { get; set; }
     public virtual ApplicationUser Reviewer { get; set; }
 
     // المستخدم الذي تم تقييمه

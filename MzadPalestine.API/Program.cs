@@ -245,6 +245,8 @@ public class Program
         services.AddScoped<IMessageRepository , MessageRepository>();
         services.AddScoped<INotificationRepository , NotificationRepository>();
         services.AddScoped<IReviewRepository , ReviewRepository>();
+        services.AddScoped<ISubscriptionRepository , SubscriptionRepository>();
+        services.AddScoped<ITagRepository, TagRepository>();
     }
 
     private static void ConfigurePipeline(WebApplication app)

@@ -33,19 +33,19 @@ public class ReviewConfiguration : IEntityTypeConfiguration<Review>
             .HasForeignKey(r => r.ReviewerId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(r => r.Reviewee) // Êã ÊÕÍíÍ RevieweeId
-            .WithMany(u => u.Reviews) // Êã ÊÕÍíÍ ÇáÚáÇÞÉ åäÇ
+        builder.HasOne(r => r.Reviewee)
+            .WithMany(u => u.ReceivedReviews)
             .HasForeignKey(r => r.RevieweeId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Optional relationship with an auction
         builder.HasOne(r => r.Auction)
-            .WithMany(a => a.Reviews) // Êã ÊÕÍíÍ ÇáÚáÇÞÉ åäÇ
+            .WithMany(a => a.Reviews) // ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
             .HasForeignKey(r => r.AuctionId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Ensure a user can only review another user once per auction
-        builder.HasIndex(r => new { r.ReviewerId, r.AuctionId }) // Êã ÊÕÍíÍ ÇáÝåÑÓ
+        builder.HasIndex(r => new { r.ReviewerId, r.AuctionId }) // ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             .IsUnique()
             .HasFilter("[AuctionId] IS NOT NULL");
     }

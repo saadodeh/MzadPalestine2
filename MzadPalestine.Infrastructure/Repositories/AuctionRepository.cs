@@ -29,9 +29,9 @@ public class AuctionRepository : GenericRepository<Auction>, IAuctionRepository
             .Include(a => a.Listing)
                 .ThenInclude(l => l.Location)
             .Include(a => a.Listing)
-                .ThenInclude(l => l.User)
+                .ThenInclude(l => l.Seller)
             .Include(a => a.Bids.OrderByDescending(b => b.Amount))
-                .ThenInclude(b => b.User)
+                .ThenInclude(b => b.Bidder)
             .FirstOrDefaultAsync(a => a.Id == auctionId);
     }
 
@@ -70,7 +70,7 @@ public class AuctionRepository : GenericRepository<Auction>, IAuctionRepository
             .Include(a => a.Listing)
             .Include(a => a.Bids)
                 .ThenInclude(b => b.Bidder)
-            .Where(a => a.Listing.UserId == userId)
+            .Where(a => a.Listing.SellerId == userId)
             .OrderByDescending(a => a.CreatedAt);
 
         return await PagedList<Auction>.CreateAsync(query, parameters.PageNumber, parameters.PageSize);

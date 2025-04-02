@@ -55,23 +55,42 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .WithMany(t => t.Listings)
             .UsingEntity(j => j.ToTable("ListingTags"));
 
-        // Configure Auction-User relationship for winner
+        // Configure many-to-many relationship between Auction and ApplicationUser through AuctionWatch
+        builder.Entity<AuctionWatch>()
+            .ToTable("AuctionWatchers")
+            .HasKey(aw => new { aw.UserId, aw.AuctionId });
+
+        // Configure Listing-User relationship
+        builder.Entity<Listing>()
+            .HasOne(l => l.Seller)
+            .WithMany(u => u.Listings)
+            .HasForeignKey(l => l.SellerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Configure Auction relationships
         builder.Entity<Auction>()
             .HasOne(a => a.Winner)
-            .WithMany()
+            .WithMany(u => u.WonAuctions)
             .HasForeignKey(a => a.WinnerId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<Auction>()
+            .HasOne(a => a.Listing)
+            .WithOne()
+            .HasForeignKey<Auction>(a => a.ListingId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Configure Review relationships
         builder.Entity<Review>()
             .HasOne(r => r.Reviewer)
-            .WithMany()
+            .WithMany(u => u.Reviews)
             .HasForeignKey(r => r.ReviewerId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.Entity<Review>()
             .HasOne(r => r.Reviewee)
-            .WithMany()
+            .WithMany(u => u.ReceivedReviews)
             .HasForeignKey(r => r.RevieweeId)
             .OnDelete(DeleteBehavior.Restrict);
 
@@ -100,6 +119,52 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasOne(d => d.ResolvedBy)
             .WithMany()
             .HasForeignKey(d => d.ResolvedById)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Configure Invoice relationships
+        builder.Entity<Invoice>()
+            .HasOne(i => i.User)
+            .WithMany()
+            .HasForeignKey(i => i.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Configure WalletTransaction relationships
+        builder.Entity<WalletTransaction>()
+            .HasOne(wt => wt.User)
+            .WithMany()
+            .HasForeignKey(wt => wt.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<Invoice>()
+            .HasOne(i => i.Auction)
+            .WithMany()
+            .HasForeignKey(i => i.AuctionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Configure Bid relationships
+        builder.Entity<Bid>()
+            .HasOne(b => b.Auction)
+            .WithMany(a => a.Bids)
+            .HasForeignKey(b => b.AuctionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<Bid>()
+            .HasOne(b => b.Bidder)
+            .WithMany(u => u.Bids)
+            .HasForeignKey(b => b.BidderId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Configure AutoBid relationships
+        builder.Entity<AutoBid>()
+            .HasOne(ab => ab.Auction)
+            .WithMany(a => a.AutoBids)
+            .HasForeignKey(ab => ab.AuctionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<AutoBid>()
+            .HasOne(ab => ab.Bidder)
+            .WithMany()
+            .HasForeignKey(ab => ab.BidderId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Configure indexes

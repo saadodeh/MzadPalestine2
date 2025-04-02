@@ -24,7 +24,7 @@ public class InvoiceRepository : GenericRepository<Invoice>, IInvoiceRepository
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<Invoice>> GetAuctionInvoicesAsync(string auctionId)
+    public async Task<IEnumerable<Invoice>> GetAuctionInvoicesAsync(int auctionId)
     {
         return await _context.Invoices
             .Include(i => i.User)

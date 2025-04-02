@@ -21,7 +21,7 @@ public class WatchlistRepository : GenericRepository<Watchlist>, IWatchlistRepos
             .Include(w => w.Listing)
                 .ThenInclude(l => l!.Images)
             .Include(w => w.Listing)
-                .ThenInclude(l => l!.User)
+                .ThenInclude(l => l!.Seller)
             .Where(w => w.UserId == userId)
             .OrderByDescending(w => w.CreatedAt);
 

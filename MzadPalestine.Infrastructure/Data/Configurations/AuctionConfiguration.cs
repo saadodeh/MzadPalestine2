@@ -37,9 +37,10 @@ public class AuctionConfiguration : IEntityTypeConfiguration<Auction>
             .HasForeignKey(a => a.WinnerId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        builder.HasMany(a => a.Watchers)
-            .WithMany()
-            .UsingEntity(j => j.ToTable("AuctionWatchers"));
+        builder.HasMany(a => a.AuctionWatches)
+            .WithOne(aw => aw.Auction)
+            .HasForeignKey(aw => aw.AuctionId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(a => a.AutoBids)
             .WithOne(ab => ab.Auction)

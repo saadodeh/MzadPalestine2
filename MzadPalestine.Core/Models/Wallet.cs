@@ -5,7 +5,7 @@ namespace MzadPalestine.Core.Models;
 public class Wallet : BaseEntity
 {
     public int Id { get; set; }
-    public int UserId { get; set; } 
+    public string UserId { get; set; } = string.Empty;
     public decimal Balance { get; set; }
     public decimal PendingBalance { get; set; }
     public decimal TotalDeposited { get; set; }

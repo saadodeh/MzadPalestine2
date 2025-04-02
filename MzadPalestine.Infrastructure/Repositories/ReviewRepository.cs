@@ -14,7 +14,7 @@ public class ReviewRepository : GenericRepository<Review>, IReviewRepository
         _context = context;
     }
 
-    public async Task<IEnumerable<Review>> GetUserReviewsAsync(int userId)
+    public async Task<IEnumerable<Review>> GetUserReviewsAsync(string userId)
     {
         return await _context.Reviews
             .Include(r => r.ReviewerId)
@@ -25,7 +25,7 @@ public class ReviewRepository : GenericRepository<Review>, IReviewRepository
             .ToListAsync();
     }
 
-    public async Task<double> GetUserAverageRatingAsync(int userId)
+    public async Task<double> GetUserAverageRatingAsync(string userId)
     {
         var reviews = await _context.Reviews
             .Include(r => r.ReviewerId)
@@ -51,13 +51,13 @@ public class ReviewRepository : GenericRepository<Review>, IReviewRepository
             .ToListAsync();
     }
 
-    public async Task<bool> HasUserReviewedAuctionAsync(int userId, int auctionId)
+    public async Task<bool> HasUserReviewedAuctionAsync(string userId, int auctionId)
     {
         return await _context.Reviews
             .AnyAsync(r => r.ReviewerId == userId && r.AuctionId == auctionId);
     }
 
-    public async Task<Review?> GetUserAuctionReviewAsync(int userId, int auctionId)
+    public async Task<Review?> GetUserAuctionReviewAsync(string userId, int auctionId)
     {
         return await _context.Reviews
             .Include(r => r.ReviewerId)
@@ -68,26 +68,16 @@ public class ReviewRepository : GenericRepository<Review>, IReviewRepository
 
     public Task<IEnumerable<Review>> GetAuctionReviewsAsync(string auctionId)
     {
-        throw new NotImplementedException();
+        return GetAuctionReviewsAsync(int.Parse(auctionId));
     }
 
     public Task<bool> HasUserReviewedAuctionAsync(string userId, string auctionId)
     {
-        throw new NotImplementedException();
+        return HasUserReviewedAuctionAsync(userId, int.Parse(auctionId));
     }
 
     public Task<Review?> GetUserAuctionReviewAsync(string userId, string auctionId)
     {
-        throw new NotImplementedException();
-    }
-
-    public Task<IEnumerable<Review>> GetUserReviewsAsync(string userId)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<double> GetUserAverageRatingAsync(string userId)
-    {
-        throw new NotImplementedException();
+        return GetUserAuctionReviewAsync(userId, int.Parse(auctionId));
     }
 }

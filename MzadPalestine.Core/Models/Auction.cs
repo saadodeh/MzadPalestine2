@@ -5,14 +5,13 @@ namespace MzadPalestine.Core.Models;
 
 public class Auction : BaseEntity
 {
-    public int Id { get; set; }
     public int ListingId { get; set; }
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public decimal CurrentPrice { get; set; }
     public decimal MinimumBidIncrement { get; set; }
     public AuctionStatus Status { get; set; }
-    public int WinnerId { get; set; }
+    public string? WinnerId { get; set; }
     public PaymentStatus PaymentStatus { get; set; }
     public string? PaymentTransactionId { get; set; }
 
@@ -22,5 +21,6 @@ public class Auction : BaseEntity
     public ICollection<Bid> Bids { get; set; } = new List<Bid>();
     public ICollection<AutoBid> AutoBids { get; set; } = new List<AutoBid>();
     public ICollection<Review> Reviews { get; set; } = new List<Review>();
-    public ICollection<ApplicationUser> Watchers { get; set; } = new List<ApplicationUser>();
+    public ICollection<AuctionWatch> AuctionWatches { get; set; } = new List<AuctionWatch>();
+    public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
 }

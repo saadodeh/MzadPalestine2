@@ -48,7 +48,7 @@ public class ListingRepository : GenericRepository<Listing>, IListingRepository
     public async Task<IEnumerable<Listing>> GetUserListingsAsync(string userId)
     {
         return await _context.Listings
-            .Where(l => l.UserId == userId && !l.IsDeleted)
+            .Where(l => l.SellerId == userId && !l.IsDeleted)
             .Include(l => l.Images)
             .Include(l => l.Category)
             .OrderByDescending(l => l.CreatedAt)
@@ -98,7 +98,7 @@ public class ListingRepository : GenericRepository<Listing>, IListingRepository
 
         var listing = await _context.Listings
             .FirstOrDefaultAsync(l => l.Id == id && !l.IsDeleted);
-        return listing?.UserId == userId;
+        return listing?.SellerId == userId;
     }
 
     /// <summary>
@@ -119,7 +119,7 @@ public class ListingRepository : GenericRepository<Listing>, IListingRepository
     {
         return await _context.Listings
             .Include(l => l.Images)
-            .Include(l => l.User)
+            .Include(l => l.Seller)
             .Include(l => l.Category)
             .Include(l => l.Location)
             .FirstOrDefaultAsync(l => l.Id == id && !l.IsDeleted);

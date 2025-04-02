@@ -14,13 +14,13 @@ public class BidService : IBidService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<Bid> PlaceBidAsync(string userId, int auctionId, decimal amount)
+    public async Task<Bid> PlaceBidAsync(string userId , int auctionId , decimal amount)
     {
         var bid = new Bid
         {
-            UserId = userId,
-            AuctionId = auctionId,
-            Amount = amount,
+            BidderId = userId ,
+            AuctionId = auctionId ,
+            Amount = amount ,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -29,14 +29,14 @@ public class BidService : IBidService
         return bid;
     }
 
-    public async Task<AutoBid> SetAutoBidAsync(string userId, int auctionId, decimal maxAmount)
+    public async Task<AutoBid> SetAutoBidAsync(string userId , int auctionId , decimal maxAmount)
     {
         var autoBid = new AutoBid
         {
-            BidderId = userId,
-            AuctionId = auctionId,
-            MaxAmount = maxAmount,
-            IsActive = true,
+            BidderId = userId ,
+            AuctionId = auctionId ,
+            MaxAmount = maxAmount ,
+            IsActive = true ,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -45,9 +45,9 @@ public class BidService : IBidService
         return autoBid;
     }
 
-    public async Task<bool> CancelAutoBidAsync(string userId, int auctionId)
+    public async Task<bool> CancelAutoBidAsync(string userId , int auctionId)
     {
-        var autoBid = await _unitOfWork.AutoBids.GetAutoBidAsync(userId, auctionId);
+        var autoBid = await _unitOfWork.AutoBids.GetAutoBidAsync(userId , auctionId);
         if (autoBid == null) return false;
 
         autoBid.IsActive = false;
@@ -60,9 +60,9 @@ public class BidService : IBidService
         var bids = await _unitOfWork.Bids.GetUserBidsAsync(userId);
         return bids.Select(b => new BidDto
         {
-            Id = b.Id,
-            AuctionId = b.AuctionId,
-            Amount = b.Amount,
+            Id = b.Id ,
+            AuctionId = b.AuctionId ,
+            Amount = b.Amount ,
             CreatedAt = b.CreatedAt
         });
     }
@@ -72,9 +72,9 @@ public class BidService : IBidService
         var bids = await _unitOfWork.Bids.GetAuctionBidsAsync(auctionId);
         return bids.Select(b => new BidDto
         {
-            Id = b.Id,
-            BidderId = b.BidderId,
-            Amount = b.Amount,
+            Id = b.Id ,
+            BidderId = b.BidderId ,
+            Amount = b.Amount ,
             CreatedAt = b.CreatedAt
         });
     }

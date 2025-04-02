@@ -4,11 +4,9 @@ namespace MzadPalestine.Core.Models;
 
 public class AutoBid : BaseEntity
 {
-    public int Id { get; set; }
     public int AuctionId { get; set; }
-    public string BidderId { get; set; }
+    public string BidderId { get; set; } = string.Empty;
     public decimal MaxAmount { get; set; }
-    public DateTime CreatedAt { get; set; }
     public bool IsActive { get; set; }
 
     // Navigation properties

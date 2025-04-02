@@ -22,4 +22,7 @@ public class ApplicationUser : IdentityUser
     public virtual ICollection<Review> ReceivedReviews { get; set; } = new List<Review>();
     public virtual ICollection<IdentityUserRole<string>> UserRoles { get; set; } = new List<IdentityUserRole<string>>();
     public virtual Wallet? Wallet { get; set; }
+    public virtual ICollection<Auction> Auctions { get; set; } = new List<Auction>();
+    public virtual ICollection<Auction> WonAuctions { get; set; } = new List<Auction>();
+    public virtual ICollection<AuctionWatch> AuctionWatches { get; set; } = new List<AuctionWatch>();
 }

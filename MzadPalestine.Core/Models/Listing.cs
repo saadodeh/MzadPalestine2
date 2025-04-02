@@ -11,7 +11,6 @@ public class Listing : BaseEntity, ISoftDelete
     public string Description { get; set; }
     public decimal StartingPrice { get; set; }
     public decimal ReservePrice { get; set; }
-    public string UserId { get; set; }
     public int CategoryId { get; set; }
     public int LocationId { get; set; }
     public DateTime CreatedAt { get; set; }
@@ -21,11 +20,9 @@ public class Listing : BaseEntity, ISoftDelete
     public bool IsFeatured { get; set; }
     public DateTime? DeletedAt { get; set; }
     public string? DeletedBy { get; set; }
-        // ������� ������
-        public string SellerId { get; set; }  // �� ���� �� ����� string �� int� ��� ���� ������
-        public virtual ApplicationUser Seller { get; set; }  // ���� �������� (������
+    public string SellerId { get; set; }
+    public virtual ApplicationUser Seller { get; set; }
     // Navigation properties
-    public ApplicationUser User { get; set; }
     public Category Category { get; set; }
     public Location Location { get; set; }
     public ICollection<Tag> Tags { get; set; } = new List<Tag>();

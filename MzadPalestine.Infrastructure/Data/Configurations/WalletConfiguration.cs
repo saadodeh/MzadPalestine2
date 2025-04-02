@@ -32,7 +32,7 @@ public class WalletConfiguration : IEntityTypeConfiguration<Wallet>
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(w => w.Transactions)
-            .WithOne(t => t.Wallet)  // Êã ÊÚÏíá åÐÇ ÇáÓØÑ
+            .WithOne(t => t.Wallet)  // ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½
             .HasForeignKey(t => t.WalletId)
             .OnDelete(DeleteBehavior.Restrict);
 
@@ -47,6 +47,12 @@ public class WalletTransactionConfiguration : IEntityTypeConfiguration<WalletTra
     public void Configure(EntityTypeBuilder<WalletTransaction> builder)
     {
         builder.ToTable("WalletTransactions");
+
+        // Configure relationships
+        builder.HasOne(t => t.User)
+            .WithMany()
+            .HasForeignKey(t => t.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(t => t.Amount)
             .HasPrecision(18, 2)
@@ -73,7 +79,7 @@ public class WalletTransactionConfiguration : IEntityTypeConfiguration<WalletTra
         // Relationships
         builder.HasOne(t => t.Payment)
             .WithMany(p => p.WalletTransactions)
-            .HasForeignKey(t => t.PaymentId)  // Êã ÊÚÏíá åÐÇ ÇáÓØÑ
+            .HasForeignKey(t => t.PaymentId)  // ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

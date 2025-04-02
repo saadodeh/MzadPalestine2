@@ -6,7 +6,7 @@ namespace MzadPalestine.Core.Models;
 public class Invoice : BaseEntity
 {
     public string UserId { get; set; } = string.Empty;
-    public string AuctionId { get; set; } = string.Empty;
+    public int AuctionId { get; set; }
     public decimal Amount { get; set; }
     public DateTime DueDate { get; set; }
     public Enums.InvoiceStatus Status { get; set; }
