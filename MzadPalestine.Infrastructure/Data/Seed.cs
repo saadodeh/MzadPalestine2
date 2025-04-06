@@ -43,7 +43,11 @@ public static class Seed
             UserName = "admin@mzadpalestine.com",
             Email = "admin@mzadpalestine.com",
             EmailConfirmed = true,
-            PhoneNumberConfirmed = true
+            PhoneNumberConfirmed = true,
+            FirstName = "Admin",
+            LastName = "User",
+            IsActive = true,
+            IsVerified = true
         };
 
         if (await userManager.FindByEmailAsync(adminUser.Email) == null)

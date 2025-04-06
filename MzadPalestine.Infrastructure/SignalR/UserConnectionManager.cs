@@ -1,30 +1,37 @@
 using System.Collections.Concurrent;
-using MzadPalestine.Core.Interfaces.SignalR;
+using MzadPalestine.Core.Interfaces.Services;
 
 namespace MzadPalestine.Infrastructure.SignalR;
 
-public class UserConnectionManager : ISignalRConnectionManager
+public class UserConnectionManager : IUserConnectionManager
 {
     private readonly ConcurrentDictionary<string, List<string>> _userConnectionMap = new();
 
-    public void AddConnection(string userId, string connectionId)
+    public void KeepUserConnection(string userId, string connectionId)
     {
         if (!_userConnectionMap.ContainsKey(userId))
         {
             _userConnectionMap[userId] = new List<string>();
         }
 
-        _userConnectionMap[userId].Add(connectionId);
+        if (!_userConnectionMap[userId].Contains(connectionId))
+        {
+            _userConnectionMap[userId].Add(connectionId);
+        }
     }
 
-    public void RemoveConnection(string userId, string connectionId)
+    public void RemoveUserConnection(string connectionId)
     {
-        if (_userConnectionMap.TryGetValue(userId, out var connections))
+        foreach (var kvp in _userConnectionMap)
         {
-            connections.Remove(connectionId);
-            if (connections.Count == 0)
+            if (kvp.Value.Contains(connectionId))
             {
-                _userConnectionMap.TryRemove(userId, out _);
+                kvp.Value.Remove(connectionId);
+                if (kvp.Value.Count == 0)
+                {
+                    _userConnectionMap.TryRemove(kvp.Key, out _);
+                }
+                break;
             }
         }
     }

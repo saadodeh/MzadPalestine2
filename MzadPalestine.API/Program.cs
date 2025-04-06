@@ -1,148 +1,189 @@
 using System.Text;
 using Hangfire;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using MzadPalestine.API.Filters;
 using MzadPalestine.API.Middleware;
 using MzadPalestine.Core.Configuration;
-using MzadPalestine.Core.Interfaces;
-using MzadPalestine.Core.Interfaces.Repositories;
-using MzadPalestine.Core.Interfaces.Services;
+using MzadPalestine.Core.Interfaces.Repositories;  // 
 using MzadPalestine.Core.Models;
+using MzadPalestine.Infrastructure;
 using MzadPalestine.Infrastructure.Data;
-using MzadPalestine.Infrastructure.Repositories;
+using MzadPalestine.Infrastructure.Repositories;  // 
 using MzadPalestine.Infrastructure.Services;
-using MzadPalestine.Infrastructure.Services.Identity;
 using MzadPalestine.Infrastructure.Services.Email;
 using MzadPalestine.Infrastructure.Services.FileStorage;
-using MzadPalestine.Infrastructure.Services.Payment;
+using MzadPalestine.Infrastructure.Services.Identity;
 using MzadPalestine.Infrastructure.Services.Notification;
+using MzadPalestine.Infrastructure.Services.Payment;
 using MzadPalestine.Infrastructure.Services.CurrentUser;
 using MzadPalestine.Infrastructure.SignalR;
-using MzadPalestine.Infrastructure;
-
+using MzadPalestine.Core.Interfaces.Services;
+using MzadPalestine.Core.Interfaces;
+using System.Reflection;
 namespace MzadPalestine.API;
-
 public class Program
 {
     public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Configure HTTPS
-        builder.WebHost.ConfigureKestrel(serverOptions =>
-        {
-            serverOptions.ListenLocalhost(7222, listenOptions =>
-            {
-                listenOptions.UseHttps(httpsOptions =>
-                {                    
-                    httpsOptions.SslProtocols = System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13;
-                });
-            });
-        });
+        ConfigureKestrel(builder.WebHost);
 
-        // Configure Services
         ConfigureServices(builder);
 
         var app = builder.Build();
 
-        // Configure HTTP Pipeline
         ConfigurePipeline(app);
 
-        // Initialize Database
         await InitializeDatabase(app);
 
         await app.RunAsync();
     }
 
+    private static void ConfigureKestrel(IWebHostBuilder webHostBuilder)
+    {
+        webHostBuilder.ConfigureKestrel(serverOptions =>
+        {
+            // منفذ HTTP
+            serverOptions.ListenLocalhost(5000);
+            
+            // منفذ HTTPS
+            serverOptions.ListenLocalhost(5001, listenOptions =>
+            {
+                listenOptions.UseHttps(httpsOptions =>
+                {
+                    httpsOptions.SslProtocols = System.Security.Authentication.SslProtocols.Tls12 |
+                                               System.Security.Authentication.SslProtocols.Tls13;
+                });
+            });
+        });
+    }
+
     private static void ConfigureServices(WebApplicationBuilder builder)
     {
         var services = builder.Services;
-        var configuration = builder.Configuration;
+        var config = builder.Configuration;
 
-        // Add Infrastructure Services
-        services.AddInfrastructure(configuration);
-
-        // Core Services
-        services.AddScoped<ITokenService , TokenService>();
-        services.AddScoped<IPhotoService , PhotoService>();
-        services.AddScoped<IUnitOfWork , UnitOfWork>();
-
-        // Business Services
-        services.AddScoped<IAuctionService , AuctionService>();
-        services.AddScoped<IBidService , BidService>();
-        services.AddScoped<Core.Interfaces.SignalR.ISignalRConnectionManager , Infrastructure.SignalR.UserConnectionManager>();
-        services.AddScoped<Core.Interfaces.Services.IUserConnectionManager , Infrastructure.Services.UserConnectionManager>();
-
-        // API and Documentation
-        services.AddControllers();
-        services.AddEndpointsApiExplorer();
-        ConfigureSwagger(services);
-
-        // Database
-        services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection") ,
-                sqlServerOptionsAction: sqlOptions =>
-                {
-                    sqlOptions.EnableRetryOnFailure(
-                        maxRetryCount: 3 ,
-                        maxRetryDelay: TimeSpan.FromSeconds(5) ,
-                        errorNumbersToAdd: null);
-                }));
-
-        // Identity and Authentication
-        ConfigureIdentity(services);
-        ConfigureAuthentication(services , configuration);
-
-        // CORS
-        services.AddCors(options =>
+        services.AddControllers(options =>
         {
-            options.AddPolicy("AllowSpecificOrigin" ,
-                builder => builder
-                    .WithOrigins(configuration["AllowedOrigins"]!.Split(","))
-                    .AllowAnyMethod()
-                    .AllowAnyHeader()
-                    .AllowCredentials());
+            options.Conventions.Add(new ApiControllerConvention());
+        })
+        .AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.PropertyNamingPolicy = null;
+            options.JsonSerializerOptions.WriteIndented = true;
+            options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+            options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
         });
 
-        // Application Services
-        ConfigureApplicationServices(services , configuration);
+        services.AddEndpointsApiExplorer();
 
-        // Infrastructure
+        ConfigureSwagger(services);
+        ConfigureDatabase(services, config);
+        
+        ConfigureCors(services, config);
+
         services.AddSignalR();
 
-        // Caching
+        services.AddAutoMapper(typeof(Program).Assembly);
+
+        services.AddTransient<GlobalExceptionHandler>();
+
         services.AddStackExchangeRedisCache(options =>
         {
-            options.Configuration = configuration.GetConnectionString("Redis");
+            options.Configuration = config.GetConnectionString("Redis");
             options.InstanceName = "MzadPalestine:";
         });
 
-        // Background Jobs
-        services.AddHangfire(config =>
-            config.UseSqlServerStorage(configuration.GetConnectionString("DefaultConnection")));
-        services.AddHangfireServer();
+        services.AddInfrastructure(config);
 
-        // Exception Handling
-        services.AddTransient<GlobalExceptionHandler>();
+        // SignalR Services
+        services.AddSingleton<IUserConnectionManager, MzadPalestine.Infrastructure.SignalR.UserConnectionManager>();
+
+        // Core Services
+        services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<IPhotoService, PhotoService>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        // Business Services
+        services.AddScoped<IAuctionService, AuctionService>();
+        services.AddScoped<IBidService, BidService>();
+
+        // Repositories -   
+        services.AddScoped<MzadPalestine.Core.Interfaces.Repositories.IAuctionRepository, MzadPalestine.Infrastructure.Repositories.AuctionRepository>();
+        services.AddScoped<MzadPalestine.Core.Interfaces.Repositories.IListingRepository, MzadPalestine.Infrastructure.Repositories.ListingRepository>();
+        services.AddScoped<MzadPalestine.Core.Interfaces.Repositories.INotificationRepository, MzadPalestine.Infrastructure.Repositories.NotificationRepository>();
+        services.AddScoped<MzadPalestine.Core.Interfaces.Repositories.IReviewRepository, MzadPalestine.Infrastructure.Repositories.ReviewRepository>();
+        services.AddScoped<MzadPalestine.Core.Interfaces.ISubscriptionRepository, MzadPalestine.Infrastructure.Repositories.SubscriptionRepository>();
+        services.AddScoped<MzadPalestine.Core.Interfaces.ITagRepository, MzadPalestine.Infrastructure.Repositories.TagRepository>();
+        services.AddScoped<MzadPalestine.Core.Interfaces.IWalletRepository, MzadPalestine.Infrastructure.Repositories.WalletRepository>();
+
+        //// SignalR Connections - 
     }
 
     private static void ConfigureSwagger(IServiceCollection services)
     {
-        services.AddSwaggerGen(c =>
+        services.AddSwaggerGen(options =>
         {
-            c.SwaggerDoc("v1" , new OpenApiInfo { Title = "MzadPalestine API" , Version = "v1" });
-            c.AddSecurityDefinition("Bearer" , new OpenApiSecurityScheme
+            options.SwaggerDoc("v1", new OpenApiInfo
             {
-                Description = "JWT Authorization header using the Bearer scheme" ,
-                Name = "Authorization" ,
-                In = ParameterLocation.Header ,
-                Type = SecuritySchemeType.ApiKey ,
+                Title = "Mzad Palestine API",
+                Version = "v1",
+                Description = "RESTful API for Mzad Palestine auction platform",
+                Contact = new OpenApiContact
+                {
+                    Name = "Mzad Palestine Team",
+                    Email = "support@mzadpalestine.com",
+                }
+            });
+
+            // إضافة فلتر لتجاهل خصائص الملفات
+            options.SchemaFilter<IgnoreFormFileSchemaFilter>();
+
+            // تعريف مخطط بسيط لملفات IFormFile
+            options.MapType<IFormFile>(() => new OpenApiSchema
+            {
+                Type = "string",
+                Format = "binary"
+            });
+
+            // تعريف مخطط مصفوفة لمجموعة الملفات IFormFileCollection
+            options.MapType<IFormFileCollection>(() => new OpenApiSchema
+            {
+                Type = "array",
+                Items = new OpenApiSchema
+                {
+                    Type = "string",
+                    Format = "binary"
+                }
+            });
+
+            // تعريف مخطط Stream
+            options.MapType<Stream>(() => new OpenApiSchema
+            {
+                Type = "string",
+                Format = "binary"
+            });
+
+            // استخدام معرفات أبسط للمخططات
+            options.CustomSchemaIds(type => type.Name);
+
+            // إعداد أمان JWT
+            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token",
+                Name = "Authorization",
+                In = ParameterLocation.Header,
+                Type = SecuritySchemeType.ApiKey,
                 Scheme = "Bearer"
             });
-            c.AddSecurityRequirement(new OpenApiSecurityRequirement
+
+            options.AddSecurityRequirement(new OpenApiSecurityRequirement
             {
                 {
                     new OpenApiSecurityScheme
@@ -156,126 +197,77 @@ public class Program
                     Array.Empty<string>()
                 }
             });
+
+            // إضافة تعليقات XML إن وجدت
+            var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+            if (File.Exists(xmlPath))
+            {
+                options.IncludeXmlComments(xmlPath);
+            }
+
+            // تعطيل التحقق من صحة المخططات المعقدة
+            options.UseInlineDefinitionsForEnums();
+            options.UseOneOfForPolymorphism();
         });
     }
 
-    private static void ConfigureIdentity(IServiceCollection services)
+    private static void ConfigureDatabase(IServiceCollection services, IConfiguration config)
     {
-        services.AddIdentity<ApplicationUser , IdentityRole>(options =>
-        {
-            // Password settings
-            options.Password.RequireDigit = true;
-            options.Password.RequireLowercase = true;
-            options.Password.RequireUppercase = true;
-            options.Password.RequireNonAlphanumeric = true;
-            options.Password.RequiredLength = 8;
-
-            // User settings
-            options.User.RequireUniqueEmail = true;
-            options.SignIn.RequireConfirmedEmail = true;
-        })
-        .AddEntityFrameworkStores<ApplicationDbContext>()
-        .AddDefaultTokenProviders();
+        services.AddDbContext<ApplicationDbContext>(options =>
+            options.UseSqlServer(config.GetConnectionString("DefaultConnection")));
     }
 
-    private static void ConfigureAuthentication(IServiceCollection services , IConfiguration configuration)
+    private static void ConfigureCors(IServiceCollection services, IConfiguration config)
     {
-        services.AddAuthentication(options =>
+        var origins = config["AllowedOrigins"]?.Split(',') ?? new[] { "*" };
+        services.AddCors(options =>
         {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        })
-        .AddJwtBearer(options =>
-        {
-            options.RequireHttpsMetadata = true;
-            options.SaveToken = true;
-            options.TokenValidationParameters = new TokenValidationParameters
+            options.AddPolicy("AllowSpecificOrigin", policy =>
             {
-                ValidateIssuer = true ,
-                ValidateAudience = true ,
-                ValidateLifetime = true ,
-                ValidateIssuerSigningKey = true ,
-                ValidIssuer = configuration["JwtSettings:Issuer"] ,
-                ValidAudience = configuration["JwtSettings:Audience"] ,
-                IssuerSigningKey = new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(configuration["JwtSettings:Secret"]!)) ,
-                ClockSkew = TimeSpan.Zero
-            };
-            options.Events = new JwtBearerEvents
-            {
-                OnMessageReceived = context =>
-                {
-                    var accessToken = context.Request.Query["access_token"];
-                    var path = context.HttpContext.Request.Path;
-                    if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
-                    {
-                        context.Token = accessToken;
-                    }
-                    return Task.CompletedTask;
-                }
-            };
+                policy.WithOrigins(origins)
+                      .AllowAnyHeader()
+                      .AllowAnyMethod()
+                      .AllowCredentials();
+            });
         });
-    }
-
-    private static void ConfigureApplicationServices(IServiceCollection services , IConfiguration configuration)
-    {
-        // Add Infrastructure Services
-        services.AddInfrastructure(configuration);
-
-        // Core Services
-        services.AddScoped<ITokenService , TokenService>();
-        services.AddScoped<IPhotoService , PhotoService>();
-        services.AddScoped<IUnitOfWork , UnitOfWork>();
-
-        // Business Services
-        services.AddScoped<IAuctionService , AuctionService>();
-        services.AddScoped<IBidService , BidService>();
-        services.AddScoped<Core.Interfaces.SignalR.ISignalRConnectionManager , Infrastructure.SignalR.UserConnectionManager>();
-        services.AddScoped<Core.Interfaces.Services.IUserConnectionManager , Infrastructure.Services.UserConnectionManager>();
-
-        // Add AutoMapper
-        services.AddAutoMapper(typeof(Program).Assembly , typeof(ITokenService).Assembly);
-
-        // Repositories
-        services.AddScoped<Core.Interfaces.Repositories.IAuctionRepository , AuctionRepository>();
-        services.AddScoped<Core.Interfaces.Repositories.IListingRepository , ListingRepository>();
-        services.AddScoped<ICategoryRepository , CategoryRepository>();
-        services.AddScoped<ILocationRepository , LocationRepository>();
-        services.AddScoped<IWalletRepository , WalletRepository>();
-        services.AddScoped<IMessageRepository , MessageRepository>();
-        services.AddScoped<INotificationRepository , NotificationRepository>();
-        services.AddScoped<IReviewRepository , ReviewRepository>();
-        services.AddScoped<ISubscriptionRepository , SubscriptionRepository>();
-        services.AddScoped<ITagRepository, TagRepository>();
     }
 
     private static void ConfigurePipeline(WebApplication app)
     {
-        // Development specific middleware
+        // تمكين عرض الأخطاء التفصيلية
         if (app.Environment.IsDevelopment())
         {
-            app.UseSwagger();
-            app.UseSwaggerUI();
+            app.UseDeveloperExceptionPage();
         }
+        
+        // تفعيل Swagger في جميع البيئات
+        app.UseSwagger(c =>
+        {
+            c.SerializeAsV2 = false; // استخدام OpenAPI 3.0
+            c.RouteTemplate = "swagger/{documentName}/swagger.json";
+        });
 
-        // Global exception handling
+        app.UseSwaggerUI(c =>
+        {
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "MzadPalestine API v1");
+            c.RoutePrefix = "swagger";
+            c.DefaultModelsExpandDepth(-1);
+            c.DocumentTitle = "Mzad Palestine API Documentation";
+            c.EnableDeepLinking();
+            c.DisplayRequestDuration();
+            c.EnableValidator();
+            c.EnableFilter();
+            c.EnableTryItOutByDefault();
+        });
+
         app.UseMiddleware<GlobalExceptionHandler>();
-
-        // Security and routing
         app.UseHttpsRedirection();
         app.UseCors("AllowSpecificOrigin");
         app.UseAuthentication();
         app.UseAuthorization();
-
-        // Endpoints
         app.MapControllers();
         app.MapHub<NotificationHub>("/hubs/notifications");
-
-        // Hangfire Dashboard
-        app.UseHangfireDashboard("/hangfire" , new DashboardOptions
-        {
-            Authorization = new[] { new HangfireAuthorizationFilter() }
-        });
     }
 
     private static async Task InitializeDatabase(WebApplication app)
@@ -290,12 +282,12 @@ public class Program
             var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
             await context.Database.MigrateAsync();
-            await Seed.SeedData(context , userManager , roleManager);
+            await Seed.SeedData(context, userManager, roleManager);
         }
         catch (Exception ex)
         {
             var logger = services.GetRequiredService<ILogger<Program>>();
-            logger.LogError(ex , "An error occurred while migrating or seeding the database.");
+            logger.LogError(ex, "Database migration or seeding failed.");
         }
     }
 }

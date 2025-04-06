@@ -30,14 +30,8 @@ public class ListingsController : BaseApiController
         _cacheService = cacheService;
     }
 
-    public Task<ActionResult<PagedList<ListingDto>>> GetListings([FromQuery] ListingParams parameters)
-    {
-        return GetListings(parameters , _listingRepository);
-    }
-
     [HttpGet]
-    public async Task<ActionResult<PagedList<ListingDto>>> GetListings(
-        [FromQuery] ListingParams parameters , IListingRepository _listingRepository)
+    public async Task<ActionResult<PagedList<ListingDto>>> GetListings([FromQuery] ListingParams parameters)
     {
         var cacheKey = $"listings_{parameters}";
         var cachedResult = await _cacheService.GetAsync<PagedList<ListingDto>>(cacheKey);
@@ -48,35 +42,35 @@ public class ListingsController : BaseApiController
         }
 
         var listings = await _listingRepository.GetPagedListingsAsync(
-            parameters.PageNumber ,
-            parameters.PageSize ,
-            parameters.SearchTerm ,
-            parameters.CategoryId ,
-            parameters.LocationId ,
+            parameters.PageNumber,
+            parameters.PageSize,
+            parameters.SearchTerm,
+            parameters.CategoryId,
+            parameters.LocationId,
             parameters.Status);
 
         var result = new PagedList<ListingDto>(
             listings.Items.Select(l => new ListingDto
             {
-                Id = l.Id ,
-                Title = l.Title ,
-                Description = l.Description ,
-                StartingPrice = l.StartingPrice ,
-                Status = l.Status ,
-                CategoryId = l.CategoryId ,
-                CategoryName = l.Category?.Name ,
-                LocationId = l.LocationId ,
-                LocationName = l.Location?.Name ,
-                SellerId = l.SellerId ,
-                SellerName = $"{l.Seller?.FirstName} {l.Seller?.LastName}" ,
-                Images = l.Images.Select(i => i.Url).ToList() ,
+                Id = l.Id,
+                Title = l.Title,
+                Description = l.Description,
+                StartingPrice = l.StartingPrice,
+                Status = l.Status,
+                CategoryId = l.CategoryId,
+                CategoryName = l.Category?.Name,
+                LocationId = l.LocationId,
+                LocationName = l.Location?.Name,
+                SellerId = l.SellerId,
+                SellerName = l.Seller != null ? $"{l.Seller.FirstName} {l.Seller.LastName}" : string.Empty,
+                Images = l.Images.Select(i => i.Url).ToList(),
                 CreatedAt = l.CreatedAt
-            }).ToList() ,
-            listings.TotalCount ,
-            listings.CurrentPage ,
+            }).ToList(),
+            listings.TotalCount,
+            listings.CurrentPage,
             listings.PageSize);
 
-        await _cacheService.SetAsync(cacheKey , result , TimeSpan.FromMinutes(5));
+        await _cacheService.SetAsync(cacheKey, result, TimeSpan.FromMinutes(5));
 
         return result;
     }

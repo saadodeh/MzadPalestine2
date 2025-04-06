@@ -1,11 +1,11 @@
 using Microsoft.EntityFrameworkCore;
-using MzadPalestine.Core.Interfaces.Repositories;
+using MzadPalestine.Core.Interfaces;
 using MzadPalestine.Core.Models;
 using MzadPalestine.Infrastructure.Data;
 
 namespace MzadPalestine.Infrastructure.Repositories;
 
-public class TagRepository : GenericRepository<Tag>, Core.Interfaces.ITagRepository
+public class TagRepository : GenericRepository<Tag>, ITagRepository
 {
     private readonly ApplicationDbContext _context;
 

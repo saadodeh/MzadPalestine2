@@ -1,12 +1,12 @@
 using Microsoft.EntityFrameworkCore;
-using MzadPalestine.Core.Interfaces.Repositories;
+using MzadPalestine.Core.Interfaces;
 using MzadPalestine.Core.Models;
 using MzadPalestine.Core.Models.Common;
 using MzadPalestine.Infrastructure.Data;
 
 namespace MzadPalestine.Infrastructure.Repositories;
 
-public class SubscriptionRepository : GenericRepository<Subscription>, Core.Interfaces.ISubscriptionRepository
+public class SubscriptionRepository : GenericRepository<Subscription>, ISubscriptionRepository
 {
     private readonly ApplicationDbContext _context;
 
